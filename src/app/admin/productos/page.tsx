@@ -1,284 +1,282 @@
-import { createProductAction, toggleProductAction } from "@/app/actions/catalog";
+import Link from "next/link";
+
+import {
+  createProductAction,
+  deleteProductAction,
+  deleteProductImageAction,
+  duplicateProductAction,
+  toggleProductAction,
+  updateProductAction,
+  updateProductImageAction,
+} from "@/app/actions/catalog";
 import { EntityForm } from "@/components/admin/entity-form";
+import { ProductFields } from "@/components/admin/product-fields";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import {
+  getAdminProducts,
   getAttributesWithOptions,
   getCategories,
-  getPrivateProducts,
-  type AdminAttributeWithOptions,
 } from "@/lib/data/catalog";
 
-export default async function AdminProductsPage() {
+type AdminProductsPageProps = {
+  searchParams: Promise<{
+    q?: string;
+    categoryId?: string;
+    brand?: string;
+    stockMode?: string;
+    status?: "active" | "inactive" | "all";
+  }>;
+};
+
+export default async function AdminProductsPage({
+  searchParams,
+}: AdminProductsPageProps) {
+  const params = await searchParams;
   const [categories, products, attributes] = await Promise.all([
     getCategories(),
-    getPrivateProducts(),
+    getAdminProducts({
+      search: params.q,
+      categoryId: params.categoryId,
+      brand: params.brand,
+      stockMode: params.stockMode,
+      status: params.status ?? "all",
+    }),
     getAttributesWithOptions(),
   ]);
+  const brands = [...new Set(products.map((product) => product.brand).filter(Boolean))];
 
   return (
-    <div className="grid gap-6 2xl:grid-cols-[460px_1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Nuevo producto</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EntityForm action={createProductAction} submitLabel="Guardar producto">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Nombre</Label>
-              <Input id="name" name="name" required />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="internalCode">Codigo interno</Label>
-                <Input id="internalCode" name="internalCode" required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="oemCode">Codigo OEM</Label>
-                <Input id="oemCode" name="oemCode" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="brand">Marca</Label>
-                <Input id="brand" name="brand" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="model">Modelo</Label>
-                <Input id="model" name="model" />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="shortDescription">Descripcion corta</Label>
-              <Textarea id="shortDescription" name="shortDescription" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Descripcion larga</Label>
-              <Textarea id="description" name="description" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="price">Precio privado</Label>
-                <Input id="price" name="price" inputMode="decimal" defaultValue="0" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Stock</Label>
-                <Select name="stockMode" defaultValue="ON_REQUEST">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      "TRACKED",
-                      "AVAILABLE",
-                      "ON_REQUEST",
-                      "OUT_OF_STOCK",
-                      "HIDDEN",
-                    ].map((mode) => (
-                      <SelectItem key={mode} value={mode}>
-                        {mode}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Categoria principal</Label>
-              <Select name="mainCategoryId">
-                <SelectTrigger>
-                  <SelectValue placeholder="Sin categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <label className="flex items-center gap-2">
-                <input name="isActive" type="checkbox" defaultChecked />
-                Activo
-              </label>
-              <label className="flex items-center gap-2">
-                <input name="isFeatured" type="checkbox" />
-                Destacado
-              </label>
-            </div>
-            <div className="grid gap-3 rounded-lg border p-4">
-              <div>
-                <h3 className="text-sm font-semibold">Caracteristicas tecnicas</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Los valores se validan segun el tipo de caracteristica.
-                </p>
-              </div>
-              {attributes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Todavia no hay caracteristicas cargadas.
-                </p>
-              ) : (
-                attributes.map((attribute) => (
-                  <AttributeField key={attribute.id} attribute={attribute} />
-                ))
-              )}
-            </div>
-          </EntityForm>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-semibold">Productos</h1>
+        <p className="text-muted-foreground">
+          Alta, edicion, stock, precios privados, categorias, imagenes y
+          caracteristicas tecnicas.
+        </p>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Productos</CardTitle>
+          <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead>Codigo</TableHead>
-                <TableHead>Precio privado</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Caracteristicas</TableHead>
-                <TableHead className="text-right">Accion</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground">
-                    Todavia no hay productos cargados.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.internalCode}</TableCell>
-                    <TableCell className="font-mono">${product.price}</TableCell>
-                    <TableCell>{product.stockMode}</TableCell>
-                    <TableCell className="max-w-[260px] text-sm text-muted-foreground">
-                      {product.attributes.length === 0
-                        ? "Sin caracteristicas"
-                        : product.attributes
-                            .map((attribute) => `${attribute.attributeName}: ${attribute.value}`)
-                            .join(" · ")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <form action={toggleProductAction}>
-                        <input type="hidden" name="id" value={product.id} />
-                        <input type="hidden" name="isActive" value="true" />
-                        <Button type="submit" variant="outline" size="sm">
-                          Desactivar
-                        </Button>
-                      </form>
-                    </TableCell>
-                  </TableRow>
-                ))
+          <form className="grid gap-3 lg:grid-cols-[1fr_repeat(4,minmax(150px,220px))_auto] lg:items-end">
+            <div className="grid gap-2">
+              <Label>Texto</Label>
+              <Input
+                name="q"
+                defaultValue={params.q ?? ""}
+                placeholder="Nombre, codigo, OEM, marca"
+              />
+            </div>
+            <SelectFilter
+              name="categoryId"
+              label="Categoria"
+              value={params.categoryId}
+              options={categories.map((category) => ({
+                value: category.id,
+                label: category.name,
+              }))}
+            />
+            <SelectFilter
+              name="brand"
+              label="Marca"
+              value={params.brand}
+              options={brands.map((brand) => ({ value: brand!, label: brand! }))}
+            />
+            <SelectFilter
+              name="stockMode"
+              label="Stock"
+              value={params.stockMode}
+              options={["TRACKED", "AVAILABLE", "ON_REQUEST", "OUT_OF_STOCK", "HIDDEN"].map(
+                (mode) => ({ value: mode, label: mode }),
               )}
-            </TableBody>
-          </Table>
+            />
+            <SelectFilter
+              name="status"
+              label="Estado"
+              value={params.status}
+              options={[
+                { value: "active", label: "Activos" },
+                { value: "inactive", label: "Inactivos" },
+                { value: "all", label: "Todos" },
+              ]}
+            />
+            <div className="flex gap-2">
+              <Button type="submit">Aplicar</Button>
+              <Button asChild variant="outline">
+                <Link href="/admin/productos">Limpiar</Link>
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 2xl:grid-cols-[460px_1fr]">
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle>Nuevo producto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EntityForm action={createProductAction} submitLabel="Guardar producto">
+              <ProductFields categories={categories} attributes={attributes} />
+            </EntityForm>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          {products.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                No hay productos que coincidan con los filtros aplicados.
+              </CardContent>
+            </Card>
+          ) : (
+            products.map((product) => (
+              <Card key={product.id}>
+                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                  <div>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Badge variant={product.isActive ? "default" : "secondary"}>
+                        {product.isActive ? "Activo" : "Inactivo"}
+                      </Badge>
+                      {product.isFeatured ? <Badge>Destacado</Badge> : null}
+                      <Badge variant="outline">{product.stockMode}</Badge>
+                    </div>
+                    <CardTitle>{product.name}</CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {product.internalCode} - {product.brand ?? "Sin marca"} - $
+                      {product.price}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <form action={duplicateProductAction}>
+                      <input type="hidden" name="id" value={product.id} />
+                      <Button type="submit" variant="outline" size="sm">
+                        Duplicar
+                      </Button>
+                    </form>
+                    <form action={toggleProductAction}>
+                      <input type="hidden" name="id" value={product.id} />
+                      <input
+                        type="hidden"
+                        name="isActive"
+                        value={String(product.isActive)}
+                      />
+                      <Button type="submit" variant="outline" size="sm">
+                        {product.isActive ? "Desactivar" : "Activar"}
+                      </Button>
+                    </form>
+                    <form action={deleteProductAction}>
+                      <input type="hidden" name="id" value={product.id} />
+                      <Button type="submit" variant="outline" size="sm">
+                        Soft delete
+                      </Button>
+                    </form>
+                  </div>
+                </CardHeader>
+                <CardContent className="grid gap-6 xl:grid-cols-[1fr_300px]">
+                  <EntityForm action={updateProductAction} submitLabel="Guardar cambios">
+                    <ProductFields
+                      product={product}
+                      categories={categories}
+                      attributes={attributes}
+                    />
+                  </EntityForm>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold">Imagenes actuales</h3>
+                    {product.images.length === 0 ? (
+                      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        Sin imagenes asociadas.
+                      </div>
+                    ) : (
+                      product.images.map((image) => (
+                        <div key={image.id} className="rounded-lg border p-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={image.url}
+                            alt={image.altText ?? product.name}
+                            className="mb-3 aspect-video w-full rounded-md object-cover"
+                          />
+                          <form action={updateProductImageAction} className="grid gap-2">
+                            <input type="hidden" name="id" value={image.id} />
+                            <input
+                              type="hidden"
+                              name="productId"
+                              value={product.id}
+                            />
+                            <Label>Texto alternativo</Label>
+                            <Input name="altText" defaultValue={image.altText ?? ""} />
+                            <Label>Orden</Label>
+                            <Input
+                              name="sortOrder"
+                              type="number"
+                              min={0}
+                              defaultValue={image.sortOrder}
+                            />
+                            <Button type="submit" variant="outline" size="sm">
+                              Guardar imagen
+                            </Button>
+                          </form>
+                          <form action={deleteProductImageAction} className="mt-2">
+                            <input type="hidden" name="id" value={image.id} />
+                            <input
+                              type="hidden"
+                              name="productId"
+                              value={product.id}
+                            />
+                            <Button type="submit" variant="outline" size="sm">
+                              Desvincular imagen
+                            </Button>
+                          </form>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Solo se desvincula de la base; no se borra fisicamente
+                            de Cloudinary en esta fase.
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function AttributeField({
-  attribute,
+function SelectFilter({
+  name,
+  label,
+  value,
+  options,
 }: {
-  attribute: AdminAttributeWithOptions;
+  name: string;
+  label: string;
+  value?: string;
+  options: Array<{ value: string; label: string }>;
 }) {
-  const name = `attribute:${attribute.id}`;
-
-  if (attribute.type === "SELECT") {
-    return (
-      <div className="grid gap-2">
-        <Label htmlFor={name}>{attribute.name}</Label>
-        <select
-          id={name}
-          name={name}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="">Sin valor</option>
-          {attribute.options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.value}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (attribute.type === "MULTISELECT") {
-    return (
-      <fieldset className="grid gap-2">
-        <legend className="text-sm font-medium">{attribute.name}</legend>
-        <div className="grid gap-2">
-          {attribute.options.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin opciones configuradas.</p>
-          ) : (
-            attribute.options.map((option) => (
-              <label key={option.id} className="flex items-center gap-2 text-sm">
-                <input name={name} type="checkbox" value={option.id} />
-                {option.value}
-              </label>
-            ))
-          )}
-        </div>
-      </fieldset>
-    );
-  }
-
-  if (attribute.type === "BOOLEAN") {
-    return (
-      <div className="grid gap-2">
-        <Label htmlFor={name}>{attribute.name}</Label>
-        <select
-          id={name}
-          name={name}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="">Sin valor</option>
-          <option value="true">Si</option>
-          <option value="false">No</option>
-        </select>
-      </div>
-    );
-  }
-
   return (
     <div className="grid gap-2">
-      <Label htmlFor={name}>
-        {attribute.name}
-        {attribute.unit ? ` (${attribute.unit})` : ""}
-      </Label>
-      <Input
-        id={name}
+      <Label>{label}</Label>
+      <select
         name={name}
-        inputMode={attribute.type === "NUMBER" ? "decimal" : undefined}
-      />
+        defaultValue={value ?? ""}
+        className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+      >
+        <option value="">Todos</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

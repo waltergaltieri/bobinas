@@ -107,4 +107,25 @@ describe("catalog validations", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("requires stock quantity when stock mode is tracked", () => {
+    const result = productSchema.safeParse({
+      name: "Plaqueta reguladora",
+      slug: "plaqueta-reguladora",
+      shortDescription: "",
+      description: "",
+      brand: "Magneti Marelli",
+      model: "",
+      internalCode: "PLA-001",
+      oemCode: "",
+      mainCategoryId: "",
+      price: "10",
+      stockMode: "TRACKED",
+      stockQuantity: "",
+      isActive: true,
+      isFeatured: false,
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

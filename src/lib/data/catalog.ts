@@ -14,6 +14,7 @@ import {
   attributeOptions,
   attributes,
   categories,
+  productCategories,
   productAttributeValues,
   productImages,
   products,
@@ -87,6 +88,30 @@ export type AdminAttributeWithOptions = {
   options: Array<{
     id: string;
     value: string;
+    sortOrder: number;
+  }>;
+};
+
+export type AdminProductFilters = {
+  search?: string;
+  categoryId?: string;
+  brand?: string;
+  stockMode?: string;
+  status?: "active" | "inactive" | "all";
+};
+
+export type AdminProduct = PrivateProduct & {
+  description: string | null;
+  mainCategoryId: string | null;
+  stockQuantity: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  secondaryCategoryIds: string[];
+  images: Array<{
+    id: string;
+    url: string;
+    publicId: string;
+    altText: string | null;
     sortOrder: number;
   }>;
 };
@@ -204,12 +229,38 @@ export async function getCategories() {
       description: categories.description,
       imageUrl: categories.imageUrl,
       imagePublicId: categories.imagePublicId,
+      parentId: categories.parentId,
       sortOrder: categories.sortOrder,
       isFeatured: categories.isFeatured,
       isActive: categories.isActive,
     })
     .from(categories)
     .where(eq(categories.isActive, true))
+    .orderBy(asc(categories.sortOrder), asc(categories.name));
+}
+
+export async function getAdminCategories() {
+  if (!hasDatabaseUrl()) {
+    return sampleCategories.map((category) => ({
+      ...category,
+      parentId: null,
+    }));
+  }
+
+  return getDb()
+    .select({
+      id: categories.id,
+      name: categories.name,
+      slug: categories.slug,
+      description: categories.description,
+      imageUrl: categories.imageUrl,
+      imagePublicId: categories.imagePublicId,
+      parentId: categories.parentId,
+      sortOrder: categories.sortOrder,
+      isFeatured: categories.isFeatured,
+      isActive: categories.isActive,
+    })
+    .from(categories)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
 }
 
@@ -272,6 +323,59 @@ export async function getPublicProducts(query?: string) {
 export async function getPrivateProducts(query?: string) {
   const result = await getCatalogProducts({ role: "BUYER", search: query });
   return result.products as PrivateProduct[];
+}
+
+export async function getAdminProducts(
+  filters: AdminProductFilters = {},
+): Promise<AdminProduct[]> {
+  const allProducts = hasDatabaseUrl()
+    ? await getDbAdminProducts()
+    : getSampleAdminProducts();
+
+  return allProducts.filter((product) => {
+    const search = normalize(filters.search);
+    if (
+      search &&
+      ![
+        product.name,
+        product.slug,
+        product.brand,
+        product.model,
+        product.internalCode,
+        product.oemCode,
+      ]
+        .filter(Boolean)
+        .some((value) => normalize(value).includes(search))
+    ) {
+      return false;
+    }
+
+    if (
+      filters.categoryId &&
+      product.mainCategoryId !== filters.categoryId &&
+      !product.secondaryCategoryIds.includes(filters.categoryId)
+    ) {
+      return false;
+    }
+
+    if (filters.brand && normalize(product.brand) !== normalize(filters.brand)) {
+      return false;
+    }
+
+    if (filters.stockMode && product.stockMode !== filters.stockMode) {
+      return false;
+    }
+
+    if (filters.status === "active" && !product.isActive) {
+      return false;
+    }
+
+    if (filters.status === "inactive" && product.isActive) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 export async function getAdminMetrics() {
@@ -558,6 +662,93 @@ async function getDbRelatedProducts(
           .limit(3);
 
   return rows;
+}
+
+async function getDbAdminProducts(): Promise<AdminProduct[]> {
+  const productRows = await getDb()
+    .select({
+      id: products.id,
+      name: products.name,
+      slug: products.slug,
+      shortDescription: products.shortDescription,
+      description: products.description,
+      internalCode: products.internalCode,
+      oemCode: products.oemCode,
+      brand: products.brand,
+      model: products.model,
+      price: products.price,
+      stockMode: products.stockMode,
+      stockQuantity: products.stockQuantity,
+      mainCategoryId: products.mainCategoryId,
+      isActive: products.isActive,
+      isFeatured: products.isFeatured,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
+    })
+    .from(products)
+    .leftJoin(categories, eq(categories.id, products.mainCategoryId))
+    .orderBy(desc(products.isFeatured), asc(products.name));
+
+  if (productRows.length === 0) {
+    return [];
+  }
+
+  const ids = productRows.map((product) => product.id);
+  const [imageRows, secondaryRows] = await Promise.all([
+    getDb()
+      .select({
+        id: productImages.id,
+        productId: productImages.productId,
+        url: productImages.url,
+        publicId: productImages.publicId,
+        altText: productImages.altText,
+        sortOrder: productImages.sortOrder,
+      })
+      .from(productImages)
+      .where(inArray(productImages.productId, ids))
+      .orderBy(asc(productImages.sortOrder)),
+    getDb()
+      .select({
+        productId: productCategories.productId,
+        categoryId: productCategories.categoryId,
+      })
+      .from(productCategories)
+      .where(inArray(productCategories.productId, ids)),
+  ]);
+
+  const adminProducts: AdminProduct[] = productRows.map((product) => ({
+    ...product,
+    price: product.price,
+    imageUrl: imageRows.find((image) => image.productId === product.id)?.url ?? null,
+    attributes: [],
+    secondaryCategoryIds: secondaryRows
+      .filter((row) => row.productId === product.id)
+      .map((row) => row.categoryId),
+    images: imageRows
+      .filter((image) => image.productId === product.id)
+      .map((image) => ({
+        id: image.id,
+        url: image.url,
+        publicId: image.publicId,
+        altText: image.altText,
+        sortOrder: image.sortOrder,
+      })),
+  }));
+
+  await attachDbAttributes(adminProducts);
+  return adminProducts;
+}
+
+function getSampleAdminProducts(): AdminProduct[] {
+  return sampleProducts.map((product) => ({
+    ...product,
+    price: product.price ?? "0.00",
+    mainCategoryId: product.mainCategoryId,
+    stockQuantity: product.stockMode === "TRACKED" ? 1 : 0,
+    attributes: getSampleProductAttributes(product.id),
+    secondaryCategoryIds: [],
+    images: product.images,
+  }));
 }
 
 function getSampleCatalogProducts(role: ViewerRole) {
