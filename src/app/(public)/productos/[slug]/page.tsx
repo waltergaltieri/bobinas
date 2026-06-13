@@ -4,6 +4,7 @@ import { MessageCircle, PackagePlus } from "lucide-react";
 
 import { addToRequestAction } from "@/app/actions/purchase-requests";
 import { ProductCard } from "@/components/catalog/product-card";
+import { ProductViewTracker } from "@/components/tracking/product-view-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +30,10 @@ export default async function ProductDetailPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <ProductViewTracker
+        productId={product.id}
+        sourcePath={`/productos/${product.slug}`}
+      />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <section className="space-y-3">
           <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border bg-muted text-sm text-muted-foreground">

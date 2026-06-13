@@ -9,12 +9,14 @@ describe("route authorization", () => {
     expect(canAccessRoute("BUYER", "/admin/pedidos")).toBe(false);
     expect(canAccessRoute("BUYER", "/admin/compradores")).toBe(false);
     expect(canAccessRoute("BUYER", "/admin/home")).toBe(false);
+    expect(canAccessRoute("BUYER", "/admin/metricas")).toBe(false);
     expect(canAccessRoute("BUYER", "/admin/popup")).toBe(false);
     expect(canAccessRoute("BUYER", "/admin/configuracion")).toBe(false);
     expect(canAccessRoute(null, "/admin/popup")).toBe(false);
     expect(canAccessRoute(null, "/admin/pedidos/123")).toBe(false);
     expect(canAccessRoute("ADMIN", "/admin/home")).toBe(true);
     expect(canAccessRoute("ADMIN", "/admin/compradores")).toBe(true);
+    expect(canAccessRoute("ADMIN", "/admin/metricas")).toBe(true);
     expect(canAccessRoute("ADMIN", "/admin/pedidos/123")).toBe(true);
     expect(canAccessRoute("ADMIN", "/admin/productos")).toBe(true);
   });

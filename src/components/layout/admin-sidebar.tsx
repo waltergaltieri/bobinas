@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Boxes,
+  BarChart3,
   ClipboardList,
   Gauge,
   Home,
@@ -21,6 +22,7 @@ const icons = {
   "/admin/caracteristicas": SlidersHorizontal,
   "/admin/compradores": Users,
   "/admin/pedidos": ClipboardList,
+  "/admin/metricas": BarChart3,
   "/admin/home": Home,
   "/admin/popup": Image,
   "/admin/configuracion": Settings,
@@ -33,6 +35,7 @@ const items = [
   { href: "/admin/caracteristicas", label: "Caracteristicas" },
   { href: "/admin/compradores", label: "Compradores" },
   { href: "/admin/pedidos", label: "Pedidos" },
+  { href: "/admin/metricas", label: "Metricas" },
   { href: "/admin/home", label: "Home" },
   { href: "/admin/popup", label: "Popup" },
   { href: "/admin/configuracion", label: "Configuracion" },

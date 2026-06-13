@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search, SlidersHorizontal } from "lucide-react";
 
 import { ProductCard } from "@/components/catalog/product-card";
+import { SearchTracker } from "@/components/tracking/search-tracker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,18 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <SearchTracker
+        query={getParam(params.q) ?? ""}
+        filters={{
+          category: getParam(params.category),
+          brand: getParam(params.brand),
+          model: getParam(params.model),
+          sort: getParam(params.sort),
+          ...selectedAttributes,
+        }}
+        resultsCount={catalog.total}
+        sourcePath="/productos"
+      />
       <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
         <div>
           <h1 className="text-3xl font-semibold">Productos</h1>

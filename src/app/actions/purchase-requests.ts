@@ -17,6 +17,7 @@ import {
   removeProductFromList,
   updateListItemQuantity,
 } from "@/lib/purchase-requests/core";
+import { recordRequestEvent } from "@/lib/tracking/record";
 
 export type RequestActionState = {
   ok?: boolean;
@@ -41,6 +42,12 @@ export async function addToRequestAction(formData: FormData) {
   });
 
   await setStoredRequestList(profile, nextList);
+  await recordRequestEvent({
+    eventType: "ADD_ITEM",
+    buyerId: profile.id,
+    productId,
+    sourcePath: redirectTo,
+  });
   revalidateRequestPaths();
   redirect(withMessage(redirectTo, "producto-agregado"));
 }
@@ -60,6 +67,13 @@ export async function updateRequestItemQuantityAction(formData: FormData) {
       quantity,
     });
     await setStoredRequestList(profile, nextList);
+    await recordRequestEvent({
+      eventType: "UPDATE_QUANTITY",
+      buyerId: profile.id,
+      productId,
+      quantity,
+      sourcePath: redirectTo,
+    });
   } catch (error) {
     if (error instanceof PurchaseRequestError) {
       redirect(withMessage(redirectTo, "cantidad-invalida"));
@@ -83,6 +97,12 @@ export async function removeRequestItemAction(formData: FormData) {
   });
 
   await setStoredRequestList(profile, nextList);
+  await recordRequestEvent({
+    eventType: "REMOVE_ITEM",
+    buyerId: profile.id,
+    productId,
+    sourcePath: redirectTo,
+  });
   revalidateRequestPaths();
   redirect(withMessage(redirectTo, "producto-eliminado"));
 }
@@ -108,6 +128,12 @@ export async function submitPurchaseRequestAction(
       profile,
       buyerNotes: String(formData.get("buyerNotes") ?? "").trim(),
     });
+    await recordRequestEvent({
+      eventType: "SUBMIT_REQUEST",
+      buyerId: profile.id,
+      purchaseRequestId: isUuid(id) ? id : undefined,
+      sourcePath: "/mi-pedido",
+    });
   } catch (error) {
     if (error instanceof PurchaseRequestError) {
       return { error: error.message };
@@ -120,6 +146,12 @@ export async function submitPurchaseRequestAction(
 
   revalidateRequestPaths();
   redirect(`/mis-pedidos?mensaje=pedido-enviado&id=${encodeURIComponent(id)}`);
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 function revalidateRequestPaths() {

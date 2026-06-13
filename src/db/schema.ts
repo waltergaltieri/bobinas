@@ -317,6 +317,8 @@ export const productViews = pgTable(
       .references(() => products.id, { onDelete: "cascade" }),
     userId: uuid("user_id").references(() => profiles.id, { onDelete: "set null" }),
     sessionId: varchar("session_id", { length: 160 }),
+    userRole: varchar("user_role", { length: 40 }),
+    sourcePath: text("source_path"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -332,10 +334,37 @@ export const searchLogs = pgTable(
     query: text("query").notNull(),
     userId: uuid("user_id").references(() => profiles.id, { onDelete: "set null" }),
     sessionId: varchar("session_id", { length: 160 }),
+    filtersJson: text("filters_json"),
+    sourcePath: text("source_path"),
     resultsCount: integer("results_count").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("search_logs_created_at_idx").on(table.createdAt)],
+);
+
+export const requestEvents = pgTable(
+  "request_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    eventType: varchar("event_type", { length: 80 }).notNull(),
+    buyerId: uuid("buyer_id").references(() => profiles.id, { onDelete: "set null" }),
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "set null",
+    }),
+    purchaseRequestId: uuid("purchase_request_id").references(() => purchaseRequests.id, {
+      onDelete: "set null",
+    }),
+    quantity: integer("quantity"),
+    sessionId: varchar("session_id", { length: 160 }),
+    sourcePath: text("source_path"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("request_events_type_idx").on(table.eventType),
+    index("request_events_buyer_idx").on(table.buyerId),
+    index("request_events_product_idx").on(table.productId),
+    index("request_events_created_at_idx").on(table.createdAt),
+  ],
 );
 
 export type ProfileRole = (typeof profileRoleEnum.enumValues)[number];
