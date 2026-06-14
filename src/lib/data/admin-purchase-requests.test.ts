@@ -6,13 +6,17 @@ import {
   updateAdminPurchaseRequest,
 } from "./purchase-requests";
 
+const sampleRequestId = "16161616-1616-4161-8161-161616161616";
+
 describe("admin purchase request data", () => {
   it("lets admin list received requests from the fallback source", async () => {
     const requests = await getAdminPurchaseRequests();
 
     expect(requests.length).toBeGreaterThan(0);
     expect(requests[0]).toMatchObject({
-      id: expect.stringContaining("PED-"),
+      id: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/,
+      ),
       buyerName: expect.any(String),
       status: expect.any(String),
       saleResult: expect.any(String),
@@ -20,7 +24,7 @@ describe("admin purchase request data", () => {
   });
 
   it("lets admin read request detail with product snapshots", async () => {
-    const detail = await getAdminPurchaseRequestDetail("PED-DEMO-001");
+    const detail = await getAdminPurchaseRequestDetail(sampleRequestId);
 
     expect(detail).not.toBeNull();
     expect(detail?.items[0]).toMatchObject({
@@ -31,7 +35,7 @@ describe("admin purchase request data", () => {
   });
 
   it("lets admin change request state", async () => {
-    const updated = await updateAdminPurchaseRequest("PED-DEMO-001", {
+    const updated = await updateAdminPurchaseRequest(sampleRequestId, {
       status: "IN_REVIEW",
     });
 
@@ -39,7 +43,7 @@ describe("admin purchase request data", () => {
   });
 
   it("lets admin mark a request as concreted", async () => {
-    const updated = await updateAdminPurchaseRequest("PED-DEMO-001", {
+    const updated = await updateAdminPurchaseRequest(sampleRequestId, {
       status: "COMPLETED",
       saleResult: "CONCRETED",
     });
@@ -50,7 +54,7 @@ describe("admin purchase request data", () => {
   });
 
   it("lets admin mark a request as not concreted", async () => {
-    const updated = await updateAdminPurchaseRequest("PED-DEMO-001", {
+    const updated = await updateAdminPurchaseRequest(sampleRequestId, {
       status: "NOT_COMPLETED",
       saleResult: "NOT_CONCRETED",
     });

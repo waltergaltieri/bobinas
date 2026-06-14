@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { getDb } from "@/db";
+import { closeDb, getDb } from "@/db";
 import { profiles } from "@/db/schema";
 
 async function main() {
@@ -40,7 +40,9 @@ async function main() {
   console.log(`ADMIN profile linked for ${email}.`);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+main()
+  .catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  })
+  .finally(closeDb);

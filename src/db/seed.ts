@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { getDb } from "@/db";
+import { closeDb, getDb } from "@/db";
 import {
   attributeOptions,
   attributes,
@@ -115,7 +115,8 @@ async function main() {
   await db
     .insert(productAttributeValues)
     .values(
-      sampleProductAttributeValues.map((value) => ({
+      sampleProductAttributeValues.map((value, index) => ({
+        id: sampleProductAttributeValueIds[index],
         productId: value.productId,
         attributeId: value.attributeId,
         valueText: value.valueText,
@@ -162,8 +163,9 @@ async function main() {
   await db
     .insert(purchaseRequestItems)
     .values(
-      samplePurchaseRequests.flatMap((request) =>
-        request.items.map((item) => ({
+      samplePurchaseRequests.flatMap((request, requestIndex) =>
+        request.items.map((item, itemIndex) => ({
+          id: samplePurchaseRequestItemIds[requestIndex][itemIndex],
           purchaseRequestId: request.id,
           productId: item.productId,
           productNameSnapshot: item.productNameSnapshot,
@@ -235,7 +237,22 @@ async function main() {
   console.log("Seed data inserted.");
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+const sampleProductAttributeValueIds = [
+  "18181818-1818-4181-8181-181818181818",
+  "19191919-1919-4191-8191-191919191919",
+  "20202020-2020-4202-8202-202020202020",
+  "21212121-2121-4212-8212-212121212121",
+  "23232323-2323-4232-8232-232323232323",
+];
+
+const samplePurchaseRequestItemIds = [
+  ["24242424-2424-4242-8242-242424242424"],
+  ["25252525-2525-4252-8252-252525252525"],
+];
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(closeDb);

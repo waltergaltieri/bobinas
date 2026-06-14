@@ -243,7 +243,7 @@ export const sampleBuyerProfile = {
 
 export const samplePurchaseRequests = [
   {
-    id: "PED-DEMO-001",
+    id: "16161616-1616-4161-8161-161616161616",
     buyerId: sampleBuyerProfile.id,
     buyer: sampleBuyerProfile,
     createdAt: new Date("2026-06-13T09:30:00-03:00"),
@@ -267,7 +267,7 @@ export const samplePurchaseRequests = [
     ],
   },
   {
-    id: "PED-DEMO-002",
+    id: "17171717-1717-4171-8171-171717171717",
     buyerId: sampleBuyerProfile.id,
     buyer: sampleBuyerProfile,
     createdAt: new Date("2026-06-12T15:10:00-03:00"),
