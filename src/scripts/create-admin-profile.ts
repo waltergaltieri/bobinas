@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 
 import { closeDb, getDb } from "@/db";
 import { profiles } from "@/db/schema";

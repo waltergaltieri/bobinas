@@ -13,10 +13,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "db:verify": "tsx src/scripts/verify-database.ts",
+    "db:cleanup-demo": "tsx src/scripts/cleanup-demo-data.ts",
     "admin:create": "tsx src/scripts/create-admin-profile.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@next/env": "^16.2.9",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "class-variance-authority": "^0.7.1",
