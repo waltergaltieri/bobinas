@@ -1,4 +1,4 @@
-import type { ProfileRole, StockMode } from "@/db/schema";
+import type { AttributeType, ProfileRole, StockMode } from "@/db/schema";
 
 type ViewerRole = ProfileRole | "PUBLIC";
 
@@ -16,15 +16,30 @@ export type ProductCardSource = {
   price?: string;
   stockMode: StockMode;
   imageUrl: string | null;
+  attributes?: Array<{
+    attributeId?: string;
+    attributeName: string;
+    attributeSlug?: string;
+    type?: AttributeType;
+    value: string;
+    unit: string | null;
+  }>;
 };
 
 type PublicCatalogProductCard = Omit<ProductCardSource, "price"> & {
   primaryAction: "consult";
+  highlightedAttributes: HighlightedAttribute[];
 };
 
 type PrivateCatalogProductCard = ProductCardSource & {
   price: string;
   primaryAction: "add_to_request";
+  highlightedAttributes: HighlightedAttribute[];
+};
+
+type HighlightedAttribute = {
+  label: string;
+  value: string;
 };
 
 export type CatalogProductCard =
@@ -48,6 +63,7 @@ export function toCatalogProductCard(
     shortDescription: product.shortDescription ?? null,
     stockMode: product.stockMode,
     imageUrl: product.imageUrl,
+    highlightedAttributes: getHighlightedAttributes(product),
   };
 
   if (role === "ADMIN" || role === "BUYER") {
@@ -62,4 +78,11 @@ export function toCatalogProductCard(
     ...base,
     primaryAction: "consult",
   };
+}
+
+function getHighlightedAttributes(product: ProductCardSource): HighlightedAttribute[] {
+  return (product.attributes ?? []).slice(0, 4).map((attribute) => ({
+    label: attribute.attributeName,
+    value: [attribute.value, attribute.unit].filter(Boolean).join(" "),
+  }));
 }

@@ -1,13 +1,18 @@
 import Link from "next/link";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 
+import { CatalogSearchBox } from "@/components/catalog/catalog-search-box";
 import { ProductCard } from "@/components/catalog/product-card";
 import { SearchTracker } from "@/components/tracking/search-tracker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getCurrentProfile } from "@/lib/auth/session";
-import { getCatalogFilters, getCatalogProducts } from "@/lib/data/catalog";
+import {
+  getCatalogFilters,
+  getCatalogProducts,
+  getCatalogSearchSuggestions,
+  type CatalogFilters,
+} from "@/lib/data/catalog";
 import { toCatalogProductCard } from "@/lib/data/product-presenter";
 
 type ProductsPageProps = {
@@ -25,7 +30,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const params = await searchParams;
   const profile = await getCurrentProfile();
   const role = profile?.role ?? "PUBLIC";
-  const filters = await getCatalogFilters();
+  const [filters, suggestions] = await Promise.all([
+    getCatalogFilters(),
+    getCatalogSearchSuggestions("", { includeAll: true, limit: 80 }),
+  ]);
   const page = Number(getParam(params.page) ?? "1");
   const selectedAttributes = Object.fromEntries(
     Object.entries(params)
@@ -44,6 +52,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     pageSize: 9,
     attributes: selectedAttributes,
   });
+  const activeFilters = getActiveFilters(params, filters);
   const hasFilters =
     filters.categories.length > 0 ||
     filters.brands.length > 0 ||
@@ -68,8 +77,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <div>
           <h1 className="text-3xl font-semibold">Productos</h1>
           <p className="mt-2 max-w-2xl text-muted-foreground">
-            Catalogo tecnico con busqueda por nombre, marca, modelo, codigo
-            interno y codigo OEM.
+            Catalogo tecnico con busqueda por codigo, OEM, marca, modelo y
+            caracteristicas normalizadas.
           </p>
         </div>
         <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
@@ -77,7 +86,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-4">
           <form className="rounded-lg border bg-card p-4">
             <div className="mb-4 flex items-center gap-2">
@@ -85,19 +94,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               <h2 className="font-semibold">Filtros</h2>
             </div>
             <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="q">Buscar</Label>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="q"
-                    name="q"
-                    defaultValue={getParam(params.q)}
-                    placeholder="Codigo, OEM, marca..."
-                    className="pl-9"
-                  />
-                </div>
-              </div>
+              <CatalogSearchBox
+                initialQuery={getParam(params.q)}
+                suggestions={suggestions}
+              />
 
               <SelectFilter
                 id="category"
@@ -160,7 +160,28 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           ) : null}
         </aside>
 
-        <section>
+        <section className="min-w-0 space-y-4">
+          {activeFilters.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3">
+              {activeFilters.map((filter) => (
+                <Link
+                  key={`${filter.key}-${filter.value}`}
+                  href={filter.href}
+                  className="inline-flex max-w-full items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-sm transition hover:border-primary/50"
+                >
+                  <span className="text-muted-foreground">{filter.label}</span>
+                  <span className="max-w-[220px] truncate font-medium">
+                    {filter.value}
+                  </span>
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </Link>
+              ))}
+              <Button asChild variant="outline" size="sm">
+                <Link href="/productos">Limpiar todo</Link>
+              </Button>
+            </div>
+          ) : null}
+
           {catalog.products.length === 0 ? (
             <div className="rounded-lg border bg-card p-8 text-center">
               <h2 className="text-lg font-semibold">Sin resultados</h2>
@@ -254,6 +275,78 @@ function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getActiveFilters(
+  params: Record<string, string | string[] | undefined>,
+  filters: CatalogFilters,
+) {
+  const chips: Array<{
+    key: string;
+    label: string;
+    value: string;
+    href: string;
+  }> = [];
+  const query = getParam(params.q);
+  const category = getParam(params.category);
+  const brand = getParam(params.brand);
+  const model = getParam(params.model);
+
+  if (query) {
+    chips.push({
+      key: "q",
+      label: "Busqueda",
+      value: query,
+      href: removeParamHref(params, "q"),
+    });
+  }
+
+  if (category) {
+    chips.push({
+      key: "category",
+      label: "Categoria",
+      value:
+        filters.categories.find((option) => option.value === category)?.label ??
+        category,
+      href: removeParamHref(params, "category"),
+    });
+  }
+
+  if (brand) {
+    chips.push({
+      key: "brand",
+      label: "Marca",
+      value: brand,
+      href: removeParamHref(params, "brand"),
+    });
+  }
+
+  if (model) {
+    chips.push({
+      key: "model",
+      label: "Modelo",
+      value: model,
+      href: removeParamHref(params, "model"),
+    });
+  }
+
+  for (const attribute of filters.attributes) {
+    const key = `attr_${attribute.slug}`;
+    const value = getParam(params[key]);
+
+    if (!value) {
+      continue;
+    }
+
+    chips.push({
+      key,
+      label: attribute.name,
+      value,
+      href: removeParamHref(params, key),
+    });
+  }
+
+  return chips;
+}
+
 function getSort(value: string | undefined) {
   return sortOptions.some((option) => option.value === value)
     ? (value as (typeof sortOptions)[number]["value"])
@@ -275,4 +368,21 @@ function pageHref(
 
   next.set("page", String(Math.max(page, 1)));
   return `/productos?${next.toString()}`;
+}
+
+function removeParamHref(
+  params: Record<string, string | string[] | undefined>,
+  keyToRemove: string,
+) {
+  const next = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    const normalized = getParam(value);
+    if (normalized && key !== keyToRemove && key !== "page") {
+      next.set(key, normalized);
+    }
+  }
+
+  const query = next.toString();
+  return query ? `/productos?${query}` : "/productos";
 }

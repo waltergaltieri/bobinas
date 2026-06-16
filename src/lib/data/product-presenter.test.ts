@@ -12,6 +12,18 @@ const product = {
   price: "12500.00",
   stockMode: "AVAILABLE",
   imageUrl: "https://res.cloudinary.com/demo/image/upload/bobina.webp",
+  attributes: [
+    {
+      attributeName: "Voltaje",
+      value: "12",
+      unit: "V",
+    },
+    {
+      attributeName: "Tipo de encastre",
+      value: "Ficha rectangular",
+      unit: null,
+    },
+  ],
 };
 
 describe("toCatalogProductCard", () => {
@@ -27,5 +39,15 @@ describe("toCatalogProductCard", () => {
 
     expect(card.price).toBe("12500.00");
     expect(card.primaryAction).toBe("add_to_request");
+  });
+
+  it("keeps technical attributes visible in product cards", () => {
+    const card = toCatalogProductCard(product, "PUBLIC");
+
+    expect(card.highlightedAttributes).toEqual([
+      { label: "Voltaje", value: "12 V" },
+      { label: "Tipo de encastre", value: "Ficha rectangular" },
+    ]);
+    expect(card).not.toHaveProperty("price");
   });
 });

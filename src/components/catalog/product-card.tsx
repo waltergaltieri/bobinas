@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle, PackagePlus } from "lucide-react";
+import { Barcode, MessageCircle, PackagePlus } from "lucide-react";
 
 import { addToRequestAction } from "@/app/actions/purchase-requests";
 import type { CatalogProductCard } from "@/lib/data/product-presenter";
@@ -29,7 +29,10 @@ export function ProductCard({ product }: { product: CatalogProductCard }) {
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{product.internalCode}</Badge>
+              <Badge variant="secondary" className="font-mono">
+                <Barcode className="h-3 w-3" />
+                {product.internalCode}
+              </Badge>
               {product.categoryName ? (
                 <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
                   {product.categoryName}
@@ -46,9 +49,31 @@ export function ProductCard({ product }: { product: CatalogProductCard }) {
               {[product.brand, product.model].filter(Boolean).join(" · ") ||
                 "Repuesto"}
             </p>
-            {product.oemCode ? (
-              <p className="text-xs text-muted-foreground">OEM {product.oemCode}</p>
-            ) : null}
+            <div className="grid gap-1 text-xs text-muted-foreground">
+              {product.oemCode ? (
+                <p>
+                  <span className="font-medium text-foreground">OEM</span>{" "}
+                  <span className="font-mono">{product.oemCode}</span>
+                </p>
+              ) : null}
+              {product.highlightedAttributes.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {product.highlightedAttributes.map((attribute) => (
+                    <span
+                      key={`${attribute.label}-${attribute.value}`}
+                      className="rounded-md border bg-background px-2 py-1"
+                    >
+                      <span className="text-muted-foreground">
+                        {attribute.label}:
+                      </span>{" "}
+                      <span className="font-medium text-foreground">
+                        {attribute.value}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="mt-auto space-y-2">

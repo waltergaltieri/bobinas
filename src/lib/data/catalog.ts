@@ -67,6 +67,21 @@ export type CatalogFilters = {
   attributes: CatalogAttributeFilter[];
 };
 
+export type CatalogSearchSuggestion = {
+  type:
+    | "product"
+    | "internal_code"
+    | "oem_code"
+    | "brand"
+    | "model"
+    | "category"
+    | "attribute";
+  label: string;
+  value: string;
+  helper: string;
+  params: Record<string, string>;
+};
+
 export type CatalogAttributeValue = {
   attributeId: string;
   attributeName: string;
@@ -199,6 +214,103 @@ export async function getCatalogFilters(): Promise<CatalogFilters> {
         ),
       })),
   };
+}
+
+export async function getCatalogSearchSuggestions(
+  query: string,
+  options: { includeAll?: boolean; limit?: number } = {},
+): Promise<CatalogSearchSuggestion[]> {
+  const normalizedQuery = normalizeForSearch(query);
+
+  if (!options.includeAll && normalizedQuery.text.length < 2) {
+    return [];
+  }
+
+  const [allProducts, filters] = await Promise.all([
+    hasDatabaseUrl()
+      ? getDbCatalogProducts({ role: "ADMIN" })
+      : Promise.resolve(getSampleCatalogProducts("ADMIN")),
+    getCatalogFilters(),
+  ]);
+  const sourceProducts = options.includeAll
+    ? allProducts
+    : applyCatalogFilters(allProducts, {
+        role: "ADMIN",
+        search: query,
+      }).slice(0, 8);
+  const suggestions: CatalogSearchSuggestion[] = [];
+
+  for (const product of sourceProducts) {
+    pushSuggestion(suggestions, normalizedQuery, {
+      type: "product",
+      label: product.name,
+      value: product.name,
+      helper: [product.internalCode, product.brand, product.model]
+        .filter(Boolean)
+        .join(" - "),
+      params: { q: product.name },
+    });
+    pushSuggestion(suggestions, normalizedQuery, {
+      type: "internal_code",
+      label: product.internalCode,
+      value: product.internalCode,
+      helper: product.name,
+      params: { q: product.internalCode },
+    });
+    if (product.oemCode) {
+      pushSuggestion(suggestions, normalizedQuery, {
+        type: "oem_code",
+        label: product.oemCode,
+        value: product.oemCode,
+        helper: product.name,
+        params: { q: product.oemCode },
+      });
+    }
+  }
+
+  for (const product of allProducts) {
+    for (const attribute of product.attributes) {
+      pushSuggestion(suggestions, normalizedQuery, {
+        type: "attribute",
+        label: attribute.value,
+        value: attribute.value,
+        helper: `${attribute.attributeName}${attribute.unit ? ` (${attribute.unit})` : ""}`,
+        params: { [`attr_${attribute.attributeSlug}`]: attribute.value },
+      });
+    }
+  }
+
+  for (const brand of filters.brands) {
+    pushSuggestion(suggestions, normalizedQuery, {
+      type: "brand",
+      label: brand.label,
+      value: brand.value,
+      helper: "Marca",
+      params: { brand: brand.value },
+    });
+  }
+
+  for (const model of filters.models) {
+    pushSuggestion(suggestions, normalizedQuery, {
+      type: "model",
+      label: model.label,
+      value: model.value,
+      helper: "Modelo",
+      params: { model: model.value },
+    });
+  }
+
+  for (const category of filters.categories) {
+    pushSuggestion(suggestions, normalizedQuery, {
+      type: "category",
+      label: category.label,
+      value: category.value,
+      helper: "Categoria",
+      params: { category: category.value },
+    });
+  }
+
+  return suggestions.slice(0, options.limit ?? 10);
 }
 
 export async function getProductDetail(
@@ -824,7 +936,7 @@ function applyCatalogFilters<T extends InternalCatalogProduct>(
   productsList: T[],
   query: CatalogQuery,
 ) {
-  const search = normalize(query.search);
+  const search = tokenizeSearch(query.search);
   const category = normalize(query.category);
   const brand = normalize(query.brand);
   const model = normalize(query.model);
@@ -836,18 +948,7 @@ function applyCatalogFilters<T extends InternalCatalogProduct>(
   );
 
   return productsList.filter((product) => {
-    if (
-      search &&
-      ![
-        product.name,
-        product.brand,
-        product.model,
-        product.internalCode,
-        product.oemCode,
-      ]
-        .filter(Boolean)
-        .some((value) => normalize(value).includes(search))
-    ) {
+    if (search.length > 0 && !matchesTechnicalSearch(product, search)) {
       return false;
     }
 
@@ -936,4 +1037,94 @@ function uniqueOptions(values: string[]) {
 
 function normalize(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
+}
+
+function normalizeForSearch(value: unknown) {
+  const text = String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+
+  return {
+    text: text.replace(/[^\p{Letter}\p{Number}]+/gu, " ").trim(),
+    compact: text.replace(/[^\p{Letter}\p{Number}]+/gu, ""),
+  };
+}
+
+function tokenizeSearch(value: unknown) {
+  const normalized = normalizeForSearch(value);
+
+  if (!normalized.text) {
+    return [];
+  }
+
+  return normalized.text
+    .split(/\s+/)
+    .map((token) => normalizeForSearch(token))
+    .filter((token) => token.text || token.compact);
+}
+
+function matchesTechnicalSearch(
+  product: InternalCatalogProduct,
+  tokens: Array<ReturnType<typeof normalizeForSearch>>,
+) {
+  const fields = [
+    product.name,
+    product.slug,
+    product.brand,
+    product.model,
+    product.internalCode,
+    product.oemCode,
+    product.categoryName,
+    product.categorySlug,
+    product.shortDescription,
+    ...product.attributes.flatMap((attribute) => [
+      attribute.attributeName,
+      attribute.attributeSlug,
+      attribute.value,
+      attribute.unit,
+    ]),
+  ]
+    .filter(Boolean)
+    .map(normalizeForSearch);
+
+  return tokens.every((token) =>
+    fields.some(
+      (field) =>
+        (token.text && field.text.includes(token.text)) ||
+        (token.compact && field.compact.includes(token.compact)),
+    ),
+  );
+}
+
+function pushSuggestion(
+  suggestions: CatalogSearchSuggestion[],
+  query: ReturnType<typeof normalizeForSearch>,
+  suggestion: CatalogSearchSuggestion,
+) {
+  const normalizedLabel = normalizeForSearch(suggestion.label);
+  const normalizedHelper = normalizeForSearch(suggestion.helper);
+  const matches =
+    !query.text ||
+    normalizedLabel.text.includes(query.text) ||
+    normalizedLabel.compact.includes(query.compact) ||
+    normalizedHelper.text.includes(query.text) ||
+    normalizedHelper.compact.includes(query.compact);
+
+  if (!matches) {
+    return;
+  }
+
+  const key = `${suggestion.type}:${normalizeForSearch(suggestion.value).compact}`;
+
+  if (
+    suggestions.some(
+      (item) => `${item.type}:${normalizeForSearch(item.value).compact}` === key,
+    )
+  ) {
+    return;
+  }
+
+  suggestions.push(suggestion);
 }
