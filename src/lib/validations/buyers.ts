@@ -21,4 +21,9 @@ export const buyerSchema = z.object({
   internalNotes: z.preprocess(emptyToUndefined, z.string().trim().optional()),
 });
 
+export const createBuyerSchema = buyerSchema.extend({
+  password: z.string().min(6, "La contrasena debe tener al menos 6 caracteres."),
+});
+
 export type BuyerInput = z.infer<typeof buyerSchema>;
+export type CreateBuyerInput = z.infer<typeof createBuyerSchema>;

@@ -4,7 +4,6 @@ import {
   BarChart3,
   ClipboardList,
   Gauge,
-  Home,
   Image,
   ListFilter,
   Settings,
@@ -23,7 +22,6 @@ const icons = {
   "/admin/compradores": Users,
   "/admin/pedidos": ClipboardList,
   "/admin/metricas": BarChart3,
-  "/admin/home": Home,
   "/admin/popup": Image,
   "/admin/configuracion": Settings,
 };
@@ -36,7 +34,6 @@ const items = [
   { href: "/admin/compradores", label: "Compradores" },
   { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/metricas", label: "Metricas" },
-  { href: "/admin/home", label: "Home" },
   { href: "/admin/popup", label: "Popup" },
   { href: "/admin/configuracion", label: "Configuracion" },
 ];

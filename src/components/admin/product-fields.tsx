@@ -1,3 +1,4 @@
+import { ProductAttributeFields } from "@/components/admin/product-attribute-fields";
 import { ProductImageUpload } from "@/components/admin/product-image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -142,104 +143,12 @@ export function ProductFields({
       </div>
       <fieldset className="grid gap-3 rounded-lg border p-4">
         <legend className="px-1 text-sm font-semibold">Caracteristicas tecnicas</legend>
-        {attributes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Todavia no hay caracteristicas cargadas.
-          </p>
-        ) : (
-          attributes.map((attribute) => (
-            <AttributeField key={attribute.id} attribute={attribute} product={product} />
-          ))
-        )}
+        <ProductAttributeFields
+          attributes={attributes}
+          values={product?.attributes ?? []}
+        />
       </fieldset>
       <ProductImageUpload />
     </>
-  );
-}
-
-function AttributeField({
-  attribute,
-  product,
-}: {
-  attribute: AdminAttributeWithOptions;
-  product?: AdminProduct;
-}) {
-  const name = `attribute:${attribute.id}`;
-  const currentValues =
-    product?.attributes
-      .filter((value) => value.attributeId === attribute.id)
-      .map((value) => value.value) ?? [];
-  const firstValue = currentValues[0] ?? "";
-
-  if (attribute.type === "SELECT") {
-    return (
-      <div className="grid gap-2">
-        <Label>{attribute.name}</Label>
-        <select
-          name={name}
-          defaultValue={
-            attribute.options.find((option) => option.value === firstValue)?.id ?? ""
-          }
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="">Sin valor</option>
-          {attribute.options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.value}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (attribute.type === "MULTISELECT") {
-    return (
-      <fieldset className="grid gap-2">
-        <legend className="text-sm font-medium">{attribute.name}</legend>
-        {attribute.options.map((option) => (
-          <label key={option.id} className="flex items-center gap-2 text-sm">
-            <input
-              name={name}
-              type="checkbox"
-              value={option.id}
-              defaultChecked={currentValues.includes(option.value)}
-            />
-            {option.value}
-          </label>
-        ))}
-      </fieldset>
-    );
-  }
-
-  if (attribute.type === "BOOLEAN") {
-    return (
-      <div className="grid gap-2">
-        <Label>{attribute.name}</Label>
-        <select
-          name={name}
-          defaultValue={firstValue}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="">Sin valor</option>
-          <option value="true">Si</option>
-          <option value="false">No</option>
-        </select>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-2">
-      <Label>
-        {attribute.name}
-        {attribute.unit ? ` (${attribute.unit})` : ""}
-      </Label>
-      <Input
-        name={name}
-        defaultValue={firstValue}
-        inputMode={attribute.type === "NUMBER" ? "decimal" : undefined}
-      />
-    </div>
   );
 }

@@ -38,7 +38,7 @@ export default async function BuyersAdminPage({
         </CardHeader>
         <CardContent>
           <EntityForm action={createBuyerAction} submitLabel="Crear comprador">
-            <BuyerFields />
+            <BuyerFields includePassword />
           </EntityForm>
         </CardContent>
       </Card>

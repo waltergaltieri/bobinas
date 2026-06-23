@@ -490,6 +490,11 @@ export async function getAdminProducts(
   });
 }
 
+export async function getAdminProduct(id: string): Promise<AdminProduct | null> {
+  const products = await getAdminProducts();
+  return products.find((product) => product.id === id) ?? null;
+}
+
 export async function getAdminMetrics() {
   if (!hasDatabaseUrl()) {
     return {

@@ -5,6 +5,7 @@ import * as schema from "./schema";
 import { readServerEnv } from "@/lib/env";
 
 type Database = ReturnType<typeof drizzle<typeof schema>>;
+type EnvSource = Record<string, string | undefined>;
 
 let client: postgres.Sql | null = null;
 let db: Database | null = null;
@@ -21,9 +22,7 @@ export function getDb() {
   }
 
   if (!client) {
-    client = postgres(databaseUrl, {
-      prepare: false,
-    });
+    client = postgres(databaseUrl, getDatabaseClientOptions(process.env));
   }
 
   if (!db) {
@@ -39,4 +38,17 @@ export async function closeDb() {
     client = null;
     db = null;
   }
+}
+
+export function getDatabaseClientOptions(env: EnvSource) {
+  return {
+    prepare: false,
+    max: readPositiveInteger(env.DATABASE_MAX_CONNECTIONS, 1),
+    idle_timeout: readPositiveInteger(env.DATABASE_IDLE_TIMEOUT_SECONDS, 20),
+  };
+}
+
+function readPositiveInteger(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }

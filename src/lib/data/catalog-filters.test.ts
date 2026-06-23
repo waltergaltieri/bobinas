@@ -63,7 +63,7 @@ describe("catalog filters", () => {
   it("filters by category, brand and model", async () => {
     const result = await getCatalogProducts({
       role: "PUBLIC",
-      category: "bobinas",
+      category: "solenoides",
       brand: "Bosch",
       model: "12V",
     });
@@ -101,7 +101,14 @@ describe("catalog filters", () => {
 
     expect(labels).toContain("BOB-12");
     expect(labels).toContain("Bobina Bosch 12V");
-    expect(labels).toContain("Bobinas");
+    expect(suggestions.every((suggestion) => !("price" in suggestion))).toBe(true);
+  });
+
+  it("returns autocomplete suggestions from product categories", async () => {
+    const suggestions = await getCatalogSearchSuggestions("sol");
+    const labels = suggestions.map((suggestion) => suggestion.label);
+
+    expect(labels).toContain("Solenoides");
     expect(suggestions.every((suggestion) => !("price" in suggestion))).toBe(true);
   });
 

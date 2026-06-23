@@ -1,5 +1,7 @@
 import "@/scripts/load-env";
 
+import { sql } from "drizzle-orm";
+
 import { closeDb, getDb } from "@/db";
 import {
   attributeOptions,
@@ -33,7 +35,20 @@ async function main() {
         isActive: category.isActive,
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: categories.id,
+      set: {
+        name: sql`excluded.name`,
+        slug: sql`excluded.slug`,
+        description: sql`excluded.description`,
+        imageUrl: sql`excluded.image_url`,
+        imagePublicId: sql`excluded.image_public_id`,
+        sortOrder: sql`excluded.sort_order`,
+        isFeatured: sql`excluded.is_featured`,
+        isActive: sql`excluded.is_active`,
+        updatedAt: new Date(),
+      },
+    });
 
   await db
     .insert(attributes)

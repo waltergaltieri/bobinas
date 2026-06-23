@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buyerSchema, normalizeBuyerEmail } from "./buyers";
+import { buyerSchema, createBuyerSchema, normalizeBuyerEmail } from "./buyers";
 
 describe("buyer validations", () => {
   it("accepts a valid buyer profile", () => {
@@ -29,6 +29,22 @@ describe("buyer validations", () => {
       address: "",
       isActive: true,
       internalNotes: "",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("requires an initial password when creating buyers", () => {
+    const result = createBuyerSchema.safeParse({
+      name: "Taller Norte",
+      companyName: "Taller Norte SRL",
+      email: "compras@tallernorte.com",
+      phone: "",
+      cuit: "",
+      address: "",
+      isActive: true,
+      internalNotes: "",
+      password: "12345",
     });
 
     expect(result.success).toBe(false);

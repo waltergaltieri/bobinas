@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { loginSchema } from "@/lib/validations/catalog";
 import { createClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { getLoginRedirect } from "@/lib/auth/login-redirect";
 
 export type LoginState = {
   error?: string;
@@ -36,11 +37,7 @@ export async function loginAction(
 
   const profile = await getCurrentProfile();
 
-  if (profile?.role === "ADMIN") {
-    redirect("/admin");
-  }
-
-  redirect("/productos");
+  redirect(getLoginRedirect(profile));
 }
 
 export async function logoutAction() {

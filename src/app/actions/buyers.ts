@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -16,7 +15,7 @@ import {
   hasSupabaseAdminEnv,
 } from "@/lib/supabase/admin";
 import { readServerEnv } from "@/lib/env";
-import { buyerSchema } from "@/lib/validations/buyers";
+import { buyerSchema, createBuyerSchema } from "@/lib/validations/buyers";
 
 const idSchema = z.uuid();
 
@@ -37,7 +36,7 @@ export async function createBuyerAction(
     };
   }
 
-  const parsed = parseBuyerForm(formData);
+  const parsed = parseCreateBuyerForm(formData);
 
   if (!parsed.success) {
     return { error: formatValidationError(parsed.error, "Revisa el comprador.") };
@@ -49,10 +48,9 @@ export async function createBuyerAction(
 
   try {
     const supabase = createSupabaseAdminClient();
-    const temporaryPassword = `${randomUUID()}A1!`;
     const { data, error } = await supabase.auth.admin.createUser({
       email: parsed.data.email,
-      password: temporaryPassword,
+      password: parsed.data.password,
       email_confirm: true,
       user_metadata: {
         name: parsed.data.name,
@@ -75,10 +73,6 @@ export async function createBuyerAction(
       address: parsed.data.address,
       isActive: parsed.data.isActive,
       internalNotes: parsed.data.internalNotes,
-    });
-
-    await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: `${readServerEnv().siteUrl ?? ""}/login`,
     });
 
     revalidateBuyerPaths();
@@ -184,8 +178,19 @@ export async function resetBuyerPasswordAction(
   return { ok: true };
 }
 
+function parseCreateBuyerForm(formData: FormData) {
+  return createBuyerSchema.safeParse({
+    ...readBuyerFormValues(formData),
+    password: String(formData.get("password") ?? ""),
+  });
+}
+
 function parseBuyerForm(formData: FormData) {
-  return buyerSchema.safeParse({
+  return buyerSchema.safeParse(readBuyerFormValues(formData));
+}
+
+function readBuyerFormValues(formData: FormData) {
+  return {
     name: String(formData.get("name") ?? ""),
     companyName: String(formData.get("companyName") ?? ""),
     email: String(formData.get("email") ?? ""),
@@ -194,7 +199,7 @@ function parseBuyerForm(formData: FormData) {
     address: String(formData.get("address") ?? ""),
     isActive: formData.get("isActive") === "on",
     internalNotes: String(formData.get("internalNotes") ?? ""),
-  });
+  };
 }
 
 function formatValidationError(error: z.ZodError, fallback: string) {

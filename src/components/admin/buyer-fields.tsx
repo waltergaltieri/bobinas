@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function BuyerFields({
   buyer,
+  includePassword = false,
 }: {
   buyer?: {
     id?: string;
@@ -16,6 +17,7 @@ export function BuyerFields({
     isActive: boolean;
     internalNotes: string | null;
   };
+  includePassword?: boolean;
 }) {
   return (
     <>
@@ -32,6 +34,18 @@ export function BuyerFields({
         <Label>Email</Label>
         <Input name="email" type="email" defaultValue={buyer?.email ?? ""} required />
       </div>
+      {includePassword ? (
+        <div className="grid gap-2">
+          <Label>Contrasena inicial</Label>
+          <Input
+            name="password"
+            type="password"
+            minLength={6}
+            autoComplete="new-password"
+            required
+          />
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
           <Label>Telefono</Label>

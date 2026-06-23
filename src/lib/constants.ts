@@ -19,7 +19,6 @@ export const adminNavItems = [
   { href: "/admin/caracteristicas", label: "Caracteristicas" },
   { href: "/admin/compradores", label: "Compradores" },
   { href: "/admin/pedidos", label: "Pedidos" },
-  { href: "/admin/home", label: "Home" },
   { href: "/admin/popup", label: "Popup" },
   { href: "/admin/configuracion", label: "Configuracion" },
 ] as const;

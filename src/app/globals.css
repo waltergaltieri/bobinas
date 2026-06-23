@@ -128,3 +128,37 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .blueprint-grid {
+    background-image:
+      linear-gradient(rgba(184, 115, 51, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184, 115, 51, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .blueprint-subgrid {
+    background-image:
+      linear-gradient(rgba(184, 115, 51, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184, 115, 51, 0.05) 1px, transparent 1px);
+    background-size: 8px 8px;
+  }
+
+  .dimension-line::before,
+  .dimension-line::after {
+    content: "";
+    position: absolute;
+    width: 1px;
+    height: 100%;
+    top: 0;
+    background: #b87333;
+  }
+
+  .dimension-line::before {
+    left: 0;
+  }
+
+  .dimension-line::after {
+    right: 0;
+  }
+}

@@ -1,26 +1,17 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 
 import {
-  createProductAction,
   deleteProductAction,
-  deleteProductImageAction,
   duplicateProductAction,
   toggleProductAction,
-  updateProductAction,
-  updateProductImageAction,
 } from "@/app/actions/catalog";
-import { EntityForm } from "@/components/admin/entity-form";
-import { ProductFields } from "@/components/admin/product-fields";
-import { Badge } from "@/components/ui/badge";
+import { AdminProductList } from "@/components/admin/admin-product-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  getAdminProducts,
-  getAttributesWithOptions,
-  getCategories,
-} from "@/lib/data/catalog";
+import { getAdminProducts, getCategories } from "@/lib/data/catalog";
 
 type AdminProductsPageProps = {
   searchParams: Promise<{
@@ -29,6 +20,7 @@ type AdminProductsPageProps = {
     brand?: string;
     stockMode?: string;
     status?: "active" | "inactive" | "all";
+    view?: "list" | "cards";
   }>;
 };
 
@@ -36,7 +28,7 @@ export default async function AdminProductsPage({
   searchParams,
 }: AdminProductsPageProps) {
   const params = await searchParams;
-  const [categories, products, attributes] = await Promise.all([
+  const [categories, products] = await Promise.all([
     getCategories(),
     getAdminProducts({
       search: params.q,
@@ -45,18 +37,27 @@ export default async function AdminProductsPage({
       stockMode: params.stockMode,
       status: params.status ?? "all",
     }),
-    getAttributesWithOptions(),
   ]);
   const brands = [...new Set(products.map((product) => product.brand).filter(Boolean))];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Productos</h1>
-        <p className="text-muted-foreground">
-          Alta, edicion, stock, precios privados, categorias, imagenes y
-          caracteristicas tecnicas.
-        </p>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold">Productos</h1>
+            <p className="text-muted-foreground">
+              Listado, edicion, stock, precios privados, categorias, imagenes y
+              caracteristicas tecnicas.
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/admin/productos/nuevo">
+              <Plus className="size-4" />
+              Anadir producto
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -116,136 +117,28 @@ export default async function AdminProductsPage({
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 2xl:grid-cols-[460px_1fr]">
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Nuevo producto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <EntityForm action={createProductAction} submitLabel="Guardar producto">
-              <ProductFields categories={categories} attributes={attributes} />
-            </EntityForm>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
-          {products.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center text-sm text-muted-foreground">
-                No hay productos que coincidan con los filtros aplicados.
-              </CardContent>
-            </Card>
-          ) : (
-            products.map((product) => (
-              <Card key={product.id}>
-                <CardHeader className="flex flex-row items-start justify-between gap-4">
-                  <div>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <Badge variant={product.isActive ? "default" : "secondary"}>
-                        {product.isActive ? "Activo" : "Inactivo"}
-                      </Badge>
-                      {product.isFeatured ? <Badge>Destacado</Badge> : null}
-                      <Badge variant="outline">{product.stockMode}</Badge>
-                    </div>
-                    <CardTitle>{product.name}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {product.internalCode} - {product.brand ?? "Sin marca"} - $
-                      {product.price}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <form action={duplicateProductAction}>
-                      <input type="hidden" name="id" value={product.id} />
-                      <Button type="submit" variant="outline" size="sm">
-                        Duplicar
-                      </Button>
-                    </form>
-                    <form action={toggleProductAction}>
-                      <input type="hidden" name="id" value={product.id} />
-                      <input
-                        type="hidden"
-                        name="isActive"
-                        value={String(product.isActive)}
-                      />
-                      <Button type="submit" variant="outline" size="sm">
-                        {product.isActive ? "Desactivar" : "Activar"}
-                      </Button>
-                    </form>
-                    <form action={deleteProductAction}>
-                      <input type="hidden" name="id" value={product.id} />
-                      <Button type="submit" variant="outline" size="sm">
-                        Soft delete
-                      </Button>
-                    </form>
-                  </div>
-                </CardHeader>
-                <CardContent className="grid gap-6 xl:grid-cols-[1fr_300px]">
-                  <EntityForm action={updateProductAction} submitLabel="Guardar cambios">
-                    <ProductFields
-                      product={product}
-                      categories={categories}
-                      attributes={attributes}
-                    />
-                  </EntityForm>
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold">Imagenes actuales</h3>
-                    {product.images.length === 0 ? (
-                      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                        Sin imagenes asociadas.
-                      </div>
-                    ) : (
-                      product.images.map((image) => (
-                        <div key={image.id} className="rounded-lg border p-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={image.url}
-                            alt={image.altText ?? product.name}
-                            className="mb-3 aspect-video w-full rounded-md object-cover"
-                          />
-                          <form action={updateProductImageAction} className="grid gap-2">
-                            <input type="hidden" name="id" value={image.id} />
-                            <input
-                              type="hidden"
-                              name="productId"
-                              value={product.id}
-                            />
-                            <Label>Texto alternativo</Label>
-                            <Input name="altText" defaultValue={image.altText ?? ""} />
-                            <Label>Orden</Label>
-                            <Input
-                              name="sortOrder"
-                              type="number"
-                              min={0}
-                              defaultValue={image.sortOrder}
-                            />
-                            <Button type="submit" variant="outline" size="sm">
-                              Guardar imagen
-                            </Button>
-                          </form>
-                          <form action={deleteProductImageAction} className="mt-2">
-                            <input type="hidden" name="id" value={image.id} />
-                            <input
-                              type="hidden"
-                              name="productId"
-                              value={product.id}
-                            />
-                            <Button type="submit" variant="outline" size="sm">
-                              Desvincular imagen
-                            </Button>
-                          </form>
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Solo se desvincula de la base; no se borra fisicamente
-                            de Cloudinary en esta fase.
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+      <div className="space-y-4">
+        {products.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-4 p-8 text-center text-sm text-muted-foreground">
+              <span>No hay productos que coincidan con los filtros aplicados.</span>
+              <Button asChild>
+                <Link href="/admin/productos/nuevo">
+                  <Plus className="size-4" />
+                  Anadir producto
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <AdminProductList
+            products={products}
+            searchParams={params}
+            duplicateAction={duplicateProductAction}
+            toggleAction={toggleProductAction}
+            deleteAction={deleteProductAction}
+          />
+        )}
       </div>
     </div>
   );
