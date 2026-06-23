@@ -158,9 +158,18 @@ export type ProductDetail = (PublicProduct | PrivateProduct) & {
 export async function getCatalogProducts(query: CatalogQuery) {
   const page = Math.max(query.page ?? 1, 1);
   const pageSize = Math.min(Math.max(query.pageSize ?? 12, 1), 48);
-  const allProducts = hasDatabaseUrl()
-    ? await getDbCatalogProducts(query)
-    : getSampleCatalogProducts(query.role);
+  let allProducts: InternalCatalogProduct[];
+
+  if (hasDatabaseUrl()) {
+    try {
+      allProducts = await getDbCatalogProducts(query);
+    } catch {
+      allProducts = getSampleCatalogProducts(query.role);
+    }
+  } else {
+    allProducts = getSampleCatalogProducts(query.role);
+  }
+
   const filtered = applyCatalogFilters(allProducts, query);
   const sorted = sortProducts(filtered, query.sort ?? "featured");
   const start = (page - 1) * pageSize;
@@ -317,9 +326,17 @@ export async function getProductDetail(
   slug: string,
   role: ViewerRole,
 ): Promise<ProductDetail | null> {
-  const detail = hasDatabaseUrl()
-    ? await getDbProductDetail(slug, role)
-    : getSampleProductDetail(slug);
+  let detail: ProductDetail | null;
+
+  if (hasDatabaseUrl()) {
+    try {
+      detail = await getDbProductDetail(slug, role);
+    } catch {
+      detail = getSampleProductDetail(slug);
+    }
+  } else {
+    detail = getSampleProductDetail(slug);
+  }
 
   if (!detail) {
     return null;
@@ -333,22 +350,26 @@ export async function getCategories() {
     return sampleCategories;
   }
 
-  return getDb()
-    .select({
-      id: categories.id,
-      name: categories.name,
-      slug: categories.slug,
-      description: categories.description,
-      imageUrl: categories.imageUrl,
-      imagePublicId: categories.imagePublicId,
-      parentId: categories.parentId,
-      sortOrder: categories.sortOrder,
-      isFeatured: categories.isFeatured,
-      isActive: categories.isActive,
-    })
-    .from(categories)
-    .where(eq(categories.isActive, true))
-    .orderBy(asc(categories.sortOrder), asc(categories.name));
+  try {
+    return await getDb()
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        description: categories.description,
+        imageUrl: categories.imageUrl,
+        imagePublicId: categories.imagePublicId,
+        parentId: categories.parentId,
+        sortOrder: categories.sortOrder,
+        isFeatured: categories.isFeatured,
+        isActive: categories.isActive,
+      })
+      .from(categories)
+      .where(eq(categories.isActive, true))
+      .orderBy(asc(categories.sortOrder), asc(categories.name));
+  } catch {
+    return sampleCategories;
+  }
 }
 
 export async function getAdminCategories() {
@@ -359,21 +380,28 @@ export async function getAdminCategories() {
     }));
   }
 
-  return getDb()
-    .select({
-      id: categories.id,
-      name: categories.name,
-      slug: categories.slug,
-      description: categories.description,
-      imageUrl: categories.imageUrl,
-      imagePublicId: categories.imagePublicId,
-      parentId: categories.parentId,
-      sortOrder: categories.sortOrder,
-      isFeatured: categories.isFeatured,
-      isActive: categories.isActive,
-    })
-    .from(categories)
-    .orderBy(asc(categories.sortOrder), asc(categories.name));
+  try {
+    return await getDb()
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        description: categories.description,
+        imageUrl: categories.imageUrl,
+        imagePublicId: categories.imagePublicId,
+        parentId: categories.parentId,
+        sortOrder: categories.sortOrder,
+        isFeatured: categories.isFeatured,
+        isActive: categories.isActive,
+      })
+      .from(categories)
+      .orderBy(asc(categories.sortOrder), asc(categories.name));
+  } catch {
+    return sampleCategories.map((category) => ({
+      ...category,
+      parentId: null,
+    }));
+  }
 }
 
 export async function getAttributes() {
@@ -381,19 +409,23 @@ export async function getAttributes() {
     return sampleAttributes;
   }
 
-  return getDb()
-    .select({
-      id: attributes.id,
-      name: attributes.name,
-      slug: attributes.slug,
-      type: attributes.type,
-      unit: attributes.unit,
-      isFilterable: attributes.isFilterable,
-      isVisible: attributes.isVisible,
-      sortOrder: attributes.sortOrder,
-    })
-    .from(attributes)
-    .orderBy(asc(attributes.sortOrder), asc(attributes.name));
+  try {
+    return await getDb()
+      .select({
+        id: attributes.id,
+        name: attributes.name,
+        slug: attributes.slug,
+        type: attributes.type,
+        unit: attributes.unit,
+        isFilterable: attributes.isFilterable,
+        isVisible: attributes.isVisible,
+        sortOrder: attributes.sortOrder,
+      })
+      .from(attributes)
+      .orderBy(asc(attributes.sortOrder), asc(attributes.name));
+  } catch {
+    return sampleAttributes;
+  }
 }
 
 export async function getAttributesWithOptions(): Promise<AdminAttributeWithOptions[]> {
@@ -406,25 +438,34 @@ export async function getAttributesWithOptions(): Promise<AdminAttributeWithOpti
     }));
   }
 
-  const [attributeRows, optionRows] = await Promise.all([
-    getAttributes(),
-    getDb()
-      .select({
-        id: attributeOptions.id,
-        attributeId: attributeOptions.attributeId,
-        value: attributeOptions.value,
-        sortOrder: attributeOptions.sortOrder,
-      })
-      .from(attributeOptions)
-      .orderBy(asc(attributeOptions.sortOrder), asc(attributeOptions.value)),
-  ]);
+  try {
+    const [attributeRows, optionRows] = await Promise.all([
+      getAttributes(),
+      getDb()
+        .select({
+          id: attributeOptions.id,
+          attributeId: attributeOptions.attributeId,
+          value: attributeOptions.value,
+          sortOrder: attributeOptions.sortOrder,
+        })
+        .from(attributeOptions)
+        .orderBy(asc(attributeOptions.sortOrder), asc(attributeOptions.value)),
+    ]);
 
-  return attributeRows.map((attribute) => ({
-    ...attribute,
-    options: optionRows
-      .filter((option) => option.attributeId === attribute.id)
-      .map(({ id, value, sortOrder }) => ({ id, value, sortOrder })),
-  }));
+    return attributeRows.map((attribute) => ({
+      ...attribute,
+      options: optionRows
+        .filter((option) => option.attributeId === attribute.id)
+        .map(({ id, value, sortOrder }) => ({ id, value, sortOrder })),
+    }));
+  } catch {
+    return sampleAttributes.map((attribute) => ({
+      ...attribute,
+      options: sampleAttributeOptions
+        .filter((option) => option.attributeId === attribute.id)
+        .map(({ id, value, sortOrder }) => ({ id, value, sortOrder })),
+    }));
+  }
 }
 
 export async function getPublicProducts(query?: string) {
@@ -440,9 +481,17 @@ export async function getPrivateProducts(query?: string) {
 export async function getAdminProducts(
   filters: AdminProductFilters = {},
 ): Promise<AdminProduct[]> {
-  const allProducts = hasDatabaseUrl()
-    ? await getDbAdminProducts()
-    : getSampleAdminProducts();
+  let allProducts: AdminProduct[];
+
+  if (hasDatabaseUrl()) {
+    try {
+      allProducts = await getDbAdminProducts();
+    } catch {
+      allProducts = getSampleAdminProducts();
+    }
+  } else {
+    allProducts = getSampleAdminProducts();
+  }
 
   return allProducts.filter((product) => {
     const search = normalize(filters.search);
@@ -505,16 +554,25 @@ export async function getAdminMetrics() {
     };
   }
 
-  const [productCount] = await getDb().select({ value: count() }).from(products);
-  const [categoryCount] = await getDb().select({ value: count() }).from(categories);
-  const [attributeCount] = await getDb().select({ value: count() }).from(attributes);
+  try {
+    const [productCount] = await getDb().select({ value: count() }).from(products);
+    const [categoryCount] = await getDb().select({ value: count() }).from(categories);
+    const [attributeCount] = await getDb().select({ value: count() }).from(attributes);
 
-  return {
-    products: productCount?.value ?? 0,
-    categories: categoryCount?.value ?? 0,
-    attributes: attributeCount?.value ?? 0,
-    pendingRequests: 0,
-  };
+    return {
+      products: productCount?.value ?? 0,
+      categories: categoryCount?.value ?? 0,
+      attributes: attributeCount?.value ?? 0,
+      pendingRequests: 0,
+    };
+  } catch {
+    return {
+      products: sampleProducts.length,
+      categories: sampleCategories.length,
+      attributes: sampleAttributes.length,
+      pendingRequests: 0,
+    };
+  }
 }
 
 async function getDbCatalogProducts(query: Pick<CatalogQuery, "role">) {

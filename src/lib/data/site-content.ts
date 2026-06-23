@@ -86,31 +86,35 @@ export async function getSiteSettings(): Promise<SiteSettingsView> {
     return sampleSiteSettings;
   }
 
-  const [settings] = await getDb()
-    .select({
-      id: siteSettings.id,
-      businessName: siteSettings.businessName,
-      logoUrl: siteSettings.logoUrl,
-      logoPublicId: siteSettings.logoPublicId,
-      whatsapp: siteSettings.whatsapp,
-      email: siteSettings.email,
-      phone: siteSettings.phone,
-      address: siteSettings.address,
-      businessHours: siteSettings.businessHours,
-      instagramUrl: siteSettings.instagramUrl,
-      facebookUrl: siteSettings.facebookUrl,
-      institutionalText: siteSettings.institutionalText,
-      footerText: siteSettings.footerText,
-      seoTitle: siteSettings.seoTitle,
-      seoDescription: siteSettings.seoDescription,
-      isActive: siteSettings.isActive,
-    })
-    .from(siteSettings)
-    .where(eq(siteSettings.isActive, true))
-    .orderBy(desc(siteSettings.updatedAt))
-    .limit(1);
+  try {
+    const [settings] = await getDb()
+      .select({
+        id: siteSettings.id,
+        businessName: siteSettings.businessName,
+        logoUrl: siteSettings.logoUrl,
+        logoPublicId: siteSettings.logoPublicId,
+        whatsapp: siteSettings.whatsapp,
+        email: siteSettings.email,
+        phone: siteSettings.phone,
+        address: siteSettings.address,
+        businessHours: siteSettings.businessHours,
+        instagramUrl: siteSettings.instagramUrl,
+        facebookUrl: siteSettings.facebookUrl,
+        institutionalText: siteSettings.institutionalText,
+        footerText: siteSettings.footerText,
+        seoTitle: siteSettings.seoTitle,
+        seoDescription: siteSettings.seoDescription,
+        isActive: siteSettings.isActive,
+      })
+      .from(siteSettings)
+      .where(eq(siteSettings.isActive, true))
+      .orderBy(desc(siteSettings.updatedAt))
+      .limit(1);
 
-  return settings ?? sampleSiteSettings;
+    return settings ?? sampleSiteSettings;
+  } catch {
+    return sampleSiteSettings;
+  }
 }
 
 export async function getHomeSlides({
@@ -124,22 +128,28 @@ export async function getHomeSlides({
       .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
-  const rows = await getDb()
-    .select({
-      id: homeSlides.id,
-      imageUrl: homeSlides.imageUrl,
-      imagePublicId: homeSlides.imagePublicId,
-      title: homeSlides.title,
-      subtitle: homeSlides.subtitle,
-      buttonText: homeSlides.buttonText,
-      buttonLink: homeSlides.buttonLink,
-      sortOrder: homeSlides.sortOrder,
-      isActive: homeSlides.isActive,
-    })
-    .from(homeSlides)
-    .orderBy(asc(homeSlides.sortOrder), asc(homeSlides.title));
+  try {
+    const rows = await getDb()
+      .select({
+        id: homeSlides.id,
+        imageUrl: homeSlides.imageUrl,
+        imagePublicId: homeSlides.imagePublicId,
+        title: homeSlides.title,
+        subtitle: homeSlides.subtitle,
+        buttonText: homeSlides.buttonText,
+        buttonLink: homeSlides.buttonLink,
+        sortOrder: homeSlides.sortOrder,
+        isActive: homeSlides.isActive,
+      })
+      .from(homeSlides)
+      .orderBy(asc(homeSlides.sortOrder), asc(homeSlides.title));
 
-  return rows.filter((slide) => !activeOnly || slide.isActive);
+    return rows.filter((slide) => !activeOnly || slide.isActive);
+  } catch {
+    return sampleHomeSlides
+      .filter((slide) => !activeOnly || slide.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+  }
 }
 
 export async function getPublicPopupSettings(now = new Date()) {
@@ -152,25 +162,29 @@ export async function getAdminPopupSettings(): Promise<PopupSettingsView> {
     return samplePopupSettings;
   }
 
-  const [popup] = await getDb()
-    .select({
-      id: popupSettings.id,
-      isActive: popupSettings.isActive,
-      imageUrl: popupSettings.imageUrl,
-      imagePublicId: popupSettings.imagePublicId,
-      title: popupSettings.title,
-      text: popupSettings.text,
-      buttonText: popupSettings.buttonText,
-      buttonLink: popupSettings.buttonLink,
-      showOnce: popupSettings.showOnce,
-      startsAt: popupSettings.startsAt,
-      endsAt: popupSettings.endsAt,
-    })
-    .from(popupSettings)
-    .orderBy(desc(popupSettings.updatedAt))
-    .limit(1);
+  try {
+    const [popup] = await getDb()
+      .select({
+        id: popupSettings.id,
+        isActive: popupSettings.isActive,
+        imageUrl: popupSettings.imageUrl,
+        imagePublicId: popupSettings.imagePublicId,
+        title: popupSettings.title,
+        text: popupSettings.text,
+        buttonText: popupSettings.buttonText,
+        buttonLink: popupSettings.buttonLink,
+        showOnce: popupSettings.showOnce,
+        startsAt: popupSettings.startsAt,
+        endsAt: popupSettings.endsAt,
+      })
+      .from(popupSettings)
+      .orderBy(desc(popupSettings.updatedAt))
+      .limit(1);
 
-  return popup ?? samplePopupSettings;
+    return popup ?? samplePopupSettings;
+  } catch {
+    return samplePopupSettings;
+  }
 }
 
 export function shouldDisplayPopup(
