@@ -1,6 +1,15 @@
 import type { AttributeType, StockMode } from "@/db/schema";
 import type { ProductCardSource } from "@/lib/data/product-presenter";
 
+const sampleProductImages = {
+  bobina:
+    "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?auto=format&fit=crop&w=900&q=80",
+  inducido:
+    "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80",
+  plaqueta:
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80",
+};
+
 export const sampleCategories = [
   {
     id: "11111111-1111-4111-8111-111111111111",
@@ -169,13 +178,21 @@ export const sampleProducts: SampleProduct[] = [
     model: "12V",
     price: "12500.00",
     stockMode: "AVAILABLE" satisfies StockMode,
-    imageUrl: null,
+    imageUrl: sampleProductImages.bobina,
     mainCategoryId: "22222222-2222-4222-8222-222222222222",
     categoryName: "Solenoides",
     categorySlug: "solenoides",
     isActive: true,
     isFeatured: true,
-    images: [],
+    images: [
+      {
+        id: "55555555-5555-4555-8555-555555555556",
+        url: sampleProductImages.bobina,
+        publicId: "sample-products/bobina-bosch-12v",
+        altText: "Bobina Bosch 12V",
+        sortOrder: 1,
+      },
+    ],
   },
   {
     id: "66666666-6666-4666-8666-666666666666",
@@ -190,13 +207,21 @@ export const sampleProducts: SampleProduct[] = [
     model: "Linea pesada",
     price: "38400.00",
     stockMode: "ON_REQUEST" satisfies StockMode,
-    imageUrl: null,
+    imageUrl: sampleProductImages.inducido,
     mainCategoryId: "12111111-1111-4111-8111-111111111111",
     categoryName: "Inducidos",
     categorySlug: "inducidos",
     isActive: true,
     isFeatured: false,
-    images: [],
+    images: [
+      {
+        id: "66666666-6666-4666-8666-666666666667",
+        url: sampleProductImages.inducido,
+        publicId: "sample-products/inducido-valeo-reforzado",
+        altText: "Inducido Valeo reforzado",
+        sortOrder: 1,
+      },
+    ],
   },
   {
     id: "77777777-7777-4777-8777-777777777777",
@@ -211,13 +236,21 @@ export const sampleProducts: SampleProduct[] = [
     model: "Universal",
     price: "9300.00",
     stockMode: "TRACKED" satisfies StockMode,
-    imageUrl: null,
+    imageUrl: sampleProductImages.plaqueta,
     mainCategoryId: "12222222-2222-4222-8222-222222222222",
     categoryName: "Alternadores",
     categorySlug: "alternadores",
     isActive: true,
     isFeatured: false,
-    images: [],
+    images: [
+      {
+        id: "77777777-7777-4777-8777-777777777778",
+        url: sampleProductImages.plaqueta,
+        publicId: "sample-products/plaqueta-reguladora-universal",
+        altText: "Plaqueta reguladora universal",
+        sortOrder: 1,
+      },
+    ],
   },
 ];
 
