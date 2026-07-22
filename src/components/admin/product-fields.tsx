@@ -3,6 +3,7 @@ import { ProductImageUpload } from "@/components/admin/product-image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PackageCheck } from "lucide-react";
 import type {
   AdminAttributeWithOptions,
   AdminProduct,
@@ -61,7 +62,17 @@ export function ProductFields({
         <Label>Descripcion larga</Label>
         <Textarea name="description" defaultValue={product?.description ?? ""} />
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <input
+        type="hidden"
+        name="stockMode"
+        value={product?.stockMode ?? "ON_REQUEST"}
+      />
+      <input
+        type="hidden"
+        name="stockQuantity"
+        value={product?.stockQuantity ?? 0}
+      />
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,240px)_1fr] sm:items-end">
         <div className="grid gap-2">
           <Label>Precio privado</Label>
           <Input
@@ -70,30 +81,20 @@ export function ProductFields({
             defaultValue={product?.price ?? "0.00"}
           />
         </div>
-        <div className="grid gap-2">
-          <Label>Stock</Label>
-          <select
-            name="stockMode"
-            defaultValue={product?.stockMode ?? "ON_REQUEST"}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {["TRACKED", "AVAILABLE", "ON_REQUEST", "OUT_OF_STOCK", "HIDDEN"].map(
-              (mode) => (
-                <option key={mode} value={mode}>
-                  {mode}
-                </option>
-              ),
-            )}
-          </select>
-        </div>
-        <div className="grid gap-2">
-          <Label>Cantidad</Label>
-          <Input
-            name="stockQuantity"
-            type="number"
-            min={0}
-            defaultValue={product?.stockQuantity ?? ""}
-          />
+        <div
+          role="note"
+          className="flex gap-3 rounded-lg border bg-muted/30 p-3"
+        >
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground">
+            <PackageCheck className="size-4" aria-hidden="true" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Disponibilidad a confirmar</p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Los compradores pueden incluir este producto en una solicitud. El
+              dueño confirma la disponibilidad cuando revisa el pedido.
+            </p>
+          </div>
         </div>
       </div>
       <div className="grid gap-2">
