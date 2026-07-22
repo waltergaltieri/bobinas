@@ -14,6 +14,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:verify": "tsx src/scripts/verify-database.ts",
     "db:cleanup-demo": "tsx src/scripts/cleanup-demo-data.ts",
+    "catalog:import:daref": "tsx src/scripts/import-daref-catalog.ts",
     "admin:create": "tsx src/scripts/create-admin-profile.ts"
   },
   "dependencies": {
