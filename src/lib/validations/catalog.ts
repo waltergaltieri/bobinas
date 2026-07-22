@@ -64,6 +64,10 @@ export const productSchema = z
       emptyToUndefined,
       z.coerce.number().int().min(0).optional(),
     ),
+    reviewStatus: z
+      .enum(["PENDING", "APPROVED", "REJECTED"])
+      .default("APPROVED"),
+    reviewNotes: z.string().optional(),
     isActive: z.coerce.boolean().default(true),
     isFeatured: z.coerce.boolean().default(false),
   })

@@ -19,6 +19,9 @@ const existingProduct: AdminProduct = {
   stockQuantity: 7,
   isFeatured: false,
   isActive: true,
+  reviewStatus: "PENDING",
+  reviewNotes: "Verificar precio.",
+  reviewedAt: null,
   categoryName: "Encendido",
   categorySlug: "encendido",
   mainCategoryId: "category-1",
@@ -62,5 +65,13 @@ describe("ProductFields", () => {
       (container.querySelector('input[name="stockQuantity"]') as HTMLInputElement)
         .value,
     ).toBe("7");
+    expect(
+      (container.querySelector('select[name="reviewStatus"]') as HTMLSelectElement)
+        .value,
+    ).toBe("PENDING");
+    expect(
+      (container.querySelector('textarea[name="reviewNotes"]') as HTMLTextAreaElement)
+        .value,
+    ).toBe("Verificar precio.");
   });
 });

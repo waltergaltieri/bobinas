@@ -128,4 +128,27 @@ describe("catalog validations", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("rejects an unknown product review status", () => {
+    const result = productSchema.safeParse({
+      name: "Inducido completo",
+      slug: "inducido-completo",
+      shortDescription: "",
+      description: "",
+      brand: "DAREF",
+      model: "",
+      internalCode: "IND-002",
+      oemCode: "",
+      mainCategoryId: "",
+      price: "0",
+      stockMode: "ON_REQUEST",
+      stockQuantity: 0,
+      isActive: false,
+      isFeatured: false,
+      reviewStatus: "DESCONOCIDO",
+      reviewNotes: "",
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

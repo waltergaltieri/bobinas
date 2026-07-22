@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AdminProduct } from "@/lib/data/catalog";
+import { validateProductPublication } from "@/lib/catalog/product-review";
 import { cn } from "@/lib/utils";
 
 type ProductListAction = (formData: FormData) => void | Promise<void>;
@@ -216,10 +217,19 @@ function ProductThumb({
 }
 
 function StatusBadges({ product }: { product: AdminProduct }) {
+  const reviewLabels = {
+    PENDING: "Pendiente de revision",
+    APPROVED: "Aprobado",
+    REJECTED: "Rechazado",
+  } as const;
+
   return (
     <>
       <Badge variant={product.isActive ? "default" : "secondary"}>
         {product.isActive ? "Activo" : "Inactivo"}
+      </Badge>
+      <Badge variant={product.reviewStatus === "APPROVED" ? "outline" : "secondary"}>
+        {reviewLabels[product.reviewStatus]}
       </Badge>
       {product.isFeatured ? <Badge>Destacado</Badge> : null}
     </>
@@ -254,6 +264,14 @@ function ProductActions({
   toggleAction?: ProductListAction;
   deleteAction?: ProductListAction;
 }) {
+  const publication = validateProductPublication({
+    nextIsActive: true,
+    reviewStatus: product.reviewStatus,
+    price: product.price,
+    imageCount: product.images.length,
+  });
+  const activationBlocked = !product.isActive && !publication.ok;
+
   return (
     <div className="flex flex-wrap justify-end gap-1.5">
       <Button asChild variant="outline" size="sm">
@@ -281,7 +299,14 @@ function ProductActions({
           type="submit"
           variant="outline"
           size="icon-sm"
-          title={product.isActive ? "Desactivar" : "Activar"}
+          disabled={activationBlocked}
+          title={
+            product.isActive
+              ? "Desactivar"
+              : activationBlocked
+                ? "Completa la revision antes de activar"
+                : "Activar"
+          }
         >
           <Power className="size-4" />
         </Button>

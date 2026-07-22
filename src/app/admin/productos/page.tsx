@@ -19,6 +19,7 @@ type AdminProductsPageProps = {
     categoryId?: string;
     brand?: string;
     status?: "active" | "inactive" | "all";
+    reviewStatus?: "PENDING" | "APPROVED" | "REJECTED" | "all";
     view?: "list" | "cards";
   }>;
 };
@@ -34,6 +35,7 @@ export default async function AdminProductsPage({
       categoryId: params.categoryId,
       brand: params.brand,
       status: params.status ?? "all",
+      reviewStatus: params.reviewStatus ?? "all",
     }),
   ]);
   const brands = [...new Set(products.map((product) => product.brand).filter(Boolean))];
@@ -63,7 +65,7 @@ export default async function AdminProductsPage({
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-3 lg:grid-cols-[1fr_repeat(3,minmax(150px,220px))_auto] lg:items-end">
+          <form className="grid gap-3 lg:grid-cols-[1fr_repeat(4,minmax(140px,200px))_auto] lg:items-end">
             <div className="grid gap-2">
               <Label>Texto</Label>
               <Input
@@ -80,6 +82,17 @@ export default async function AdminProductsPage({
                 value: category.id,
                 label: category.name,
               }))}
+            />
+            <SelectFilter
+              name="reviewStatus"
+              label="Revision"
+              value={params.reviewStatus}
+              options={[
+                { value: "PENDING", label: "Pendientes" },
+                { value: "APPROVED", label: "Aprobados" },
+                { value: "REJECTED", label: "Rechazados" },
+                { value: "all", label: "Todos" },
+              ]}
             />
             <SelectFilter
               name="brand"

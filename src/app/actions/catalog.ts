@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb } from "@/db";
@@ -16,6 +16,7 @@ import {
 } from "@/db/schema";
 import { requireRole } from "@/lib/auth/session";
 import { buildDuplicatedProductIdentity } from "@/lib/data/admin-catalog";
+import { validateProductPublication } from "@/lib/catalog/product-review";
 import { toSafeMutationError } from "@/lib/db/errors";
 import {
   attributeSchema,
@@ -328,6 +329,8 @@ export async function createProductAction(
     price: String(formData.get("price") ?? "0"),
     stockMode: formData.get("stockMode"),
     stockQuantity: formData.get("stockQuantity") ?? 0,
+    reviewStatus: formData.get("reviewStatus") ?? "APPROVED",
+    reviewNotes: String(formData.get("reviewNotes") ?? ""),
     isActive: formData.get("isActive") === "on",
     isFeatured: formData.get("isFeatured") === "on",
   });
@@ -338,9 +341,22 @@ export async function createProductAction(
 
   try {
     const attributeValues = await parseProductAttributeValues(formData);
+    const publication = validateProductPublication({
+      nextIsActive: parsed.data.isActive,
+      reviewStatus: parsed.data.reviewStatus,
+      price: parsed.data.price,
+      imageCount: countIncomingImages(formData),
+    });
+    if (!publication.ok) {
+      return { error: publication.error };
+    }
     const [created] = await getDb()
       .insert(products)
-      .values(parsed.data)
+      .values({
+        ...parsed.data,
+        reviewedAt:
+          parsed.data.reviewStatus === "APPROVED" ? new Date() : null,
+      })
       .returning({ id: products.id });
 
     if (created && attributeValues.length > 0) {
@@ -387,6 +403,8 @@ export async function updateProductAction(
     price: String(formData.get("price") ?? "0"),
     stockMode: formData.get("stockMode"),
     stockQuantity: formData.get("stockQuantity") ?? "",
+    reviewStatus: formData.get("reviewStatus") ?? "PENDING",
+    reviewNotes: String(formData.get("reviewNotes") ?? ""),
     isActive: formData.get("isActive") === "on",
     isFeatured: formData.get("isFeatured") === "on",
   });
@@ -400,10 +418,43 @@ export async function updateProductAction(
   }
 
   try {
+    const [existing] = await getDb()
+      .select({
+        reviewStatus: products.reviewStatus,
+        reviewedAt: products.reviewedAt,
+      })
+      .from(products)
+      .where(eq(products.id, id.data));
+    if (!existing) {
+      return { error: "Producto inexistente." };
+    }
+    const [imageTotal] = await getDb()
+      .select({ value: count() })
+      .from(productImages)
+      .where(eq(productImages.productId, id.data));
+    const publication = validateProductPublication({
+      nextIsActive: parsed.data.isActive,
+      reviewStatus: parsed.data.reviewStatus,
+      price: parsed.data.price,
+      imageCount: Number(imageTotal?.value ?? 0) + countIncomingImages(formData),
+    });
+    if (!publication.ok) {
+      return { error: publication.error };
+    }
+
     const attributeValues = await parseProductAttributeValues(formData);
     await getDb()
       .update(products)
-      .set({ ...parsed.data, updatedAt: new Date() })
+      .set({
+        ...parsed.data,
+        reviewedAt:
+          parsed.data.reviewStatus === "APPROVED"
+            ? existing.reviewStatus === "APPROVED"
+              ? (existing.reviewedAt ?? new Date())
+              : new Date()
+            : null,
+        updatedAt: new Date(),
+      })
       .where(eq(products.id, id.data));
 
     await getDb()
@@ -467,6 +518,9 @@ export async function duplicateProductAction(formData: FormData) {
       stockQuantity: product.stockQuantity,
       isActive: false,
       isFeatured: false,
+      reviewStatus: "PENDING",
+      reviewNotes: "Copia pendiente de revision.",
+      reviewedAt: null,
     })
     .returning({ id: products.id });
 
@@ -521,11 +575,32 @@ export async function duplicateProductAction(formData: FormData) {
 export async function toggleProductAction(formData: FormData) {
   await requireRole(["ADMIN"]);
   const id = idSchema.parse(formData.get("id"));
-  const isActive = formData.get("isActive") === "true";
+  const [product] = await getDb()
+    .select({
+      isActive: products.isActive,
+      reviewStatus: products.reviewStatus,
+      price: products.price,
+    })
+    .from(products)
+    .where(eq(products.id, id));
+  if (!product) return;
+
+  const nextIsActive = !product.isActive;
+  const [imageTotal] = await getDb()
+    .select({ value: count() })
+    .from(productImages)
+    .where(eq(productImages.productId, id));
+  const publication = validateProductPublication({
+    nextIsActive,
+    reviewStatus: product.reviewStatus,
+    price: product.price,
+    imageCount: Number(imageTotal?.value ?? 0),
+  });
+  if (!publication.ok) return;
 
   await getDb()
     .update(products)
-    .set({ isActive: !isActive, updatedAt: new Date() })
+    .set({ isActive: nextIsActive, updatedAt: new Date() })
     .where(eq(products.id, id));
 
   revalidatePath("/admin/productos");
@@ -728,6 +803,15 @@ async function insertProductImages(productId: string, formData: FormData) {
   if (images.length > 0) {
     await getDb().insert(productImages).values(images);
   }
+}
+
+function countIncomingImages(formData: FormData) {
+  const urls = formData.getAll("imageUrl").map((value) => String(value).trim());
+  const publicIds = formData
+    .getAll("imagePublicId")
+    .map((value) => String(value).trim());
+
+  return urls.filter((url, index) => url && publicIds[index]).length;
 }
 
 function revalidateProductPaths(productId: string, slug?: string) {

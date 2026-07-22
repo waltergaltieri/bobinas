@@ -132,6 +132,29 @@ export function ProductFields({
           </div>
         )}
       </fieldset>
+      <fieldset className="grid gap-3 rounded-lg border p-4">
+        <legend className="px-1 text-sm font-semibold">Revision de la ficha</legend>
+        <div className="grid gap-2">
+          <Label>Estado de revision</Label>
+          <select
+            name="reviewStatus"
+            defaultValue={product?.reviewStatus ?? "APPROVED"}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="PENDING">Pendiente de revision</option>
+            <option value="APPROVED">Aprobado</option>
+            <option value="REJECTED">Rechazado</option>
+          </select>
+        </div>
+        <div className="grid gap-2">
+          <Label>Notas de revision</Label>
+          <Textarea
+            name="reviewNotes"
+            defaultValue={product?.reviewNotes ?? ""}
+            placeholder="Correcciones o verificaciones pendientes."
+          />
+        </div>
+      </fieldset>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <label className="flex items-center gap-2">
           <input name="isActive" type="checkbox" defaultChecked={product?.isActive ?? true} />

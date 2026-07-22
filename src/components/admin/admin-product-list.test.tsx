@@ -19,6 +19,9 @@ const product: AdminProduct = {
   stockQuantity: 50,
   isFeatured: false,
   isActive: true,
+  reviewStatus: "APPROVED",
+  reviewNotes: null,
+  reviewedAt: new Date("2026-07-22T12:00:00Z"),
   categoryName: "Impulsores",
   categorySlug: "impulsores",
   mainCategoryId: "category-1",
@@ -63,5 +66,30 @@ describe("AdminProductList", () => {
     expect(screen.getByTestId("admin-product-card-grid")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Editar IB1217" })).toBeTruthy();
     expect(screen.queryByText("ON_REQUEST")).toBeNull();
+  });
+
+  it("shows imported products as pending review", () => {
+    render(
+      <AdminProductList
+        products={[
+          {
+            ...product,
+            isActive: false,
+            price: "0.00",
+            reviewStatus: "PENDING",
+            reviewNotes: "Verificar aplicacion.",
+            reviewedAt: null,
+          },
+        ]}
+        searchParams={{ reviewStatus: "PENDING" }}
+      />,
+    );
+
+    expect(screen.getByText("Pendiente de revision")).toBeTruthy();
+    expect(
+      (screen.getByTitle(
+        "Completa la revision antes de activar",
+      ) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 });

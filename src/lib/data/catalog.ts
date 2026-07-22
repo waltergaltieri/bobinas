@@ -19,6 +19,7 @@ import {
   productImages,
   products,
   type AttributeType,
+  type ProductReviewStatus,
   type ProfileRole,
 } from "@/db/schema";
 import type { ProductCardSource } from "@/lib/data/product-presenter";
@@ -113,6 +114,7 @@ export type AdminProductFilters = {
   brand?: string;
   stockMode?: string;
   status?: "active" | "inactive" | "all";
+  reviewStatus?: ProductReviewStatus | "all";
 };
 
 export type AdminProduct = PrivateProduct & {
@@ -121,6 +123,9 @@ export type AdminProduct = PrivateProduct & {
   stockQuantity: number;
   isActive: boolean;
   isFeatured: boolean;
+  reviewStatus: ProductReviewStatus;
+  reviewNotes: string | null;
+  reviewedAt: Date | null;
   secondaryCategoryIds: string[];
   images: Array<{
     id: string;
@@ -535,6 +540,14 @@ export async function getAdminProducts(
       return false;
     }
 
+    if (
+      filters.reviewStatus &&
+      filters.reviewStatus !== "all" &&
+      product.reviewStatus !== filters.reviewStatus
+    ) {
+      return false;
+    }
+
     return true;
   });
 }
@@ -857,6 +870,9 @@ async function getDbAdminProducts(): Promise<AdminProduct[]> {
       mainCategoryId: products.mainCategoryId,
       isActive: products.isActive,
       isFeatured: products.isFeatured,
+      reviewStatus: products.reviewStatus,
+      reviewNotes: products.reviewNotes,
+      reviewedAt: products.reviewedAt,
       categoryName: categories.name,
       categorySlug: categories.slug,
     })
@@ -923,6 +939,9 @@ function getSampleAdminProducts(): AdminProduct[] {
     attributes: getSampleProductAttributes(product.id),
     secondaryCategoryIds: [],
     images: product.images,
+    reviewStatus: "APPROVED",
+    reviewNotes: null,
+    reviewedAt: null,
   }));
 }
 
