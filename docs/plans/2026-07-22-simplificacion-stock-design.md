@@ -51,4 +51,3 @@ El formulario y el listado de productos exponen cinco códigos técnicos de stoc
 - Pruebas del formulario que confirmen los valores internos enviados para productos nuevos y existentes.
 - Pruebas de la presentación del catálogo para el mensaje “Disponibilidad a confirmar”.
 - Ejecución completa de pruebas, lint y build.
-

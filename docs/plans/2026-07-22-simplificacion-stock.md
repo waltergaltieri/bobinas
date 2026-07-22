@@ -185,4 +185,3 @@ Expected: exit code 0.
 Run: `git status --short` and `git diff --check`
 
 Expected: sin errores de whitespace; los cambios previos del usuario permanecen intactos.
-
