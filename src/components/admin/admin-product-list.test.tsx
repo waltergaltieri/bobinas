@@ -51,6 +51,8 @@ describe("AdminProductList", () => {
 
     expect(screen.getByRole("table", { name: "Productos" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Editar IB1217" })).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: "Stock" })).toBeNull();
+    expect(screen.queryByText("ON_REQUEST")).toBeNull();
     expect(screen.queryByLabelText("Nombre")).toBeNull();
     expect(screen.queryByLabelText("Slug")).toBeNull();
   });
@@ -60,5 +62,6 @@ describe("AdminProductList", () => {
 
     expect(screen.getByTestId("admin-product-card-grid")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Editar IB1217" })).toBeTruthy();
+    expect(screen.queryByText("ON_REQUEST")).toBeNull();
   });
 });

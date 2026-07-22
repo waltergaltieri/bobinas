@@ -90,7 +90,6 @@ export function AdminProductList({
                   <TableHead className="w-[72px]">Imagen</TableHead>
                   <TableHead>Producto</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Stock</TableHead>
                   <TableHead className="text-right">Precio</TableHead>
                   <TableHead className="w-[260px] text-right">Acciones</TableHead>
                 </TableRow>
@@ -115,14 +114,6 @@ export function AdminProductList({
                       </div>
                     </TableCell>
                     <TableCell>{product.categoryName ?? "Sin categoria"}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{product.stockMode}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Cantidad: {product.stockQuantity}
-                        </span>
-                      </div>
-                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       ${product.price}
                     </TableCell>
@@ -175,9 +166,8 @@ function ProductCard({
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 rounded-md border bg-muted/30 p-2 text-xs">
+        <div className="grid grid-cols-2 gap-2 rounded-md border bg-muted/30 p-2 text-xs">
           <ProductMeta label="Categoria" value={product.categoryName ?? "Sin categoria"} />
-          <ProductMeta label="Stock" value={product.stockMode} />
           <ProductMeta label="Precio" value={`$${product.price}`} align="right" />
         </div>
         <ProductActions

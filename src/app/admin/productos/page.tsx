@@ -18,7 +18,6 @@ type AdminProductsPageProps = {
     q?: string;
     categoryId?: string;
     brand?: string;
-    stockMode?: string;
     status?: "active" | "inactive" | "all";
     view?: "list" | "cards";
   }>;
@@ -34,7 +33,6 @@ export default async function AdminProductsPage({
       search: params.q,
       categoryId: params.categoryId,
       brand: params.brand,
-      stockMode: params.stockMode,
       status: params.status ?? "all",
     }),
   ]);
@@ -47,8 +45,8 @@ export default async function AdminProductsPage({
           <div>
             <h1 className="text-3xl font-semibold">Productos</h1>
             <p className="text-muted-foreground">
-              Listado, edicion, stock, precios privados, categorias, imagenes y
-              caracteristicas tecnicas.
+              Administra la informacion, los precios privados, las categorias, las
+              imagenes y las caracteristicas tecnicas.
             </p>
           </div>
           <Button asChild>
@@ -65,7 +63,7 @@ export default async function AdminProductsPage({
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-3 lg:grid-cols-[1fr_repeat(4,minmax(150px,220px))_auto] lg:items-end">
+          <form className="grid gap-3 lg:grid-cols-[1fr_repeat(3,minmax(150px,220px))_auto] lg:items-end">
             <div className="grid gap-2">
               <Label>Texto</Label>
               <Input
@@ -88,14 +86,6 @@ export default async function AdminProductsPage({
               label="Marca"
               value={params.brand}
               options={brands.map((brand) => ({ value: brand!, label: brand! }))}
-            />
-            <SelectFilter
-              name="stockMode"
-              label="Stock"
-              value={params.stockMode}
-              options={["TRACKED", "AVAILABLE", "ON_REQUEST", "OUT_OF_STOCK", "HIDDEN"].map(
-                (mode) => ({ value: mode, label: mode }),
-              )}
             />
             <SelectFilter
               name="status"
