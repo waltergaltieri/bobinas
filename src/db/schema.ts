@@ -33,6 +33,11 @@ export const stockModeEnum = pgEnum("stock_mode", [
   "OUT_OF_STOCK",
   "HIDDEN",
 ]);
+export const productReviewStatusEnum = pgEnum("product_review_status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+]);
 export const purchaseRequestStatusEnum = pgEnum("purchase_request_status", [
   "PENDING",
   "IN_REVIEW",
@@ -111,6 +116,11 @@ export const products = pgTable(
     stockQuantity: integer("stock_quantity").default(0).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     isFeatured: boolean("is_featured").default(false).notNull(),
+    reviewStatus: productReviewStatusEnum("review_status")
+      .default("APPROVED")
+      .notNull(),
+    reviewNotes: text("review_notes"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [
@@ -118,6 +128,30 @@ export const products = pgTable(
     uniqueIndex("products_internal_code_idx").on(table.internalCode),
     index("products_main_category_idx").on(table.mainCategoryId),
     index("products_brand_idx").on(table.brand),
+  ],
+);
+
+export const productImportMetadata = pgTable(
+  "product_import_metadata",
+  {
+    productId: uuid("product_id")
+      .primaryKey()
+      .references(() => products.id, { onDelete: "cascade" }),
+    source: varchar("source", { length: 160 }).notNull(),
+    sourceUrl: text("source_url").notNull(),
+    sourceExternalId: varchar("source_external_id", { length: 120 }).notNull(),
+    sourceModifiedAt: timestamp("source_modified_at", { withTimezone: true }),
+    importBatch: varchar("import_batch", { length: 120 }).notNull(),
+    originalImageUrl: text("original_image_url"),
+    requiresReview: boolean("requires_review").default(true).notNull(),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex("product_import_metadata_source_external_idx").on(
+      table.source,
+      table.sourceExternalId,
+    ),
+    index("product_import_metadata_batch_idx").on(table.importBatch),
   ],
 );
 
@@ -370,6 +404,8 @@ export const requestEvents = pgTable(
 export type ProfileRole = (typeof profileRoleEnum.enumValues)[number];
 export type AttributeType = (typeof attributeTypeEnum.enumValues)[number];
 export type StockMode = (typeof stockModeEnum.enumValues)[number];
+export type ProductReviewStatus =
+  (typeof productReviewStatusEnum.enumValues)[number];
 export type PurchaseRequestStatus =
   (typeof purchaseRequestStatusEnum.enumValues)[number];
 export type SaleResult = (typeof saleResultEnum.enumValues)[number];

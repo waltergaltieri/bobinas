@@ -10,6 +10,7 @@ const expectedTables = [
   "products",
   "product_categories",
   "product_images",
+  "product_import_metadata",
   "attributes",
   "attribute_options",
   "product_attribute_values",
@@ -31,12 +32,14 @@ async function main() {
   const db = postgres(databaseUrl, { prepare: false });
 
   try {
-    const rows = await db<{ table_name: string }[]>`
-      select table_name
-      from information_schema.tables
-      where table_schema = 'public'
-      and table_name = any(${expectedTables})
-      order by table_name
+    const rows = await db<{ table_name: string; rls_enabled: boolean }[]>`
+      select c.relname as table_name, c.relrowsecurity as rls_enabled
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and c.relkind = 'r'
+        and c.relname = any(${expectedTables})
+      order by c.relname
     `;
 
     const found = new Set(rows.map((row) => row.table_name));
@@ -44,6 +47,14 @@ async function main() {
 
     if (missing.length > 0) {
       throw new Error(`Missing tables: ${missing.join(", ")}`);
+    }
+
+    const withoutRls = rows
+      .filter((row) => !row.rls_enabled)
+      .map((row) => row.table_name);
+
+    if (withoutRls.length > 0) {
+      throw new Error(`Tables without RLS: ${withoutRls.join(", ")}`);
     }
 
     const [categoryCount] = await db<{ count: string }[]>`
