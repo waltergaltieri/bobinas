@@ -153,6 +153,24 @@ describe("runDarefImport", () => {
     expect(fakes.calls.appliedCodes).toEqual(["20020", "20021"]);
   });
 
+  it("preserves messages from SDK errors represented as plain objects", async () => {
+    const plan = buildDarefImportPlan(snapshot);
+    plan.products = plan.products.slice(0, 1);
+    const fakes = buildFakes();
+    fakes.imageStorage.upload = async () => {
+      throw { message: "Resource not found", http_code: 404 };
+    };
+
+    const result = await runDarefImport({
+      plan,
+      apply: true,
+      persistence: fakes.persistence,
+      imageStorage: fakes.imageStorage,
+    });
+
+    expect(result.report.errors[0]?.message).toBe("Resource not found");
+  });
+
   it("aborts before external writes when an attribute type conflicts", async () => {
     const plan = buildDarefImportPlan(snapshot);
     const fakes = buildFakes();

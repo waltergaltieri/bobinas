@@ -276,3 +276,23 @@ Expected: only intended changes and no whitespace errors.
 git add README.md
 git commit -m "docs: documentar carga historica DAREF"
 ```
+
+## Resultado de la ejecucion del 22 de julio de 2026
+
+La migracion se aplico en el proyecto Supabase `Bobinas`. Como la contraseña de
+`DATABASE_URL` disponible estaba vencida, la carga uso el transporte
+administrativo de Supabase con la clave de servicio. Este transporte conserva
+las mismas validaciones e idempotencia; sus escrituras son reintentables y los
+productos permanecen inactivos/PENDING durante todo el proceso.
+
+Resultado verificado en produccion:
+
+- 422 productos y 422 metadatos de origen;
+- 221 Inducidos, 111 Rotores y 90 Estatores;
+- 8 caracteristicas y 1.062 valores normalizados;
+- 422 productos inactivos, PENDING, sin precio y sin stock disponible;
+- 0 imagenes: las 422 URLs originales de Casa Medina respondieron HTTP 404.
+
+Las URLs originales quedaron preservadas en `product_import_metadata` para
+recuperacion o reemplazo durante la revision humana. La regla de activacion
+impide publicar cualquier producto hasta que tenga una imagen valida.

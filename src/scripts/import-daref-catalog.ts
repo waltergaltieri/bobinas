@@ -8,12 +8,14 @@ import { createDarefImageStorage } from "@/lib/imports/daref/cloudinary-storage"
 import { parseDarefImportArgs } from "@/lib/imports/daref/cli";
 import { runDarefImport, type DarefImageStorage } from "@/lib/imports/daref/importer";
 import { createDarefImportPersistence } from "@/lib/imports/daref/persistence";
+import { createDarefSupabasePersistence } from "@/lib/imports/daref/supabase-persistence";
 import { buildDarefImportPlan } from "@/lib/imports/daref/transform";
 
 const usage = `
 Uso:
   npm run catalog:import:daref
   npm run catalog:import:daref -- apply DAREF-422
+  npm run catalog:import:daref -- apply DAREF-422 supabase
 
 Sin --apply se ejecuta una simulacion de solo lectura.
 La carga real siempre deja los productos inactivos y pendientes de revision.
@@ -35,7 +37,10 @@ async function main() {
   );
   const snapshot = JSON.parse(await fs.readFile(sourcePath, "utf8"));
   const plan = buildDarefImportPlan(snapshot);
-  const persistence = createDarefImportPersistence();
+  const persistence =
+    args.transport === "supabase"
+      ? createDarefSupabasePersistence()
+      : createDarefImportPersistence();
   const imageStorage: DarefImageStorage = args.apply
     ? createDarefImageStorage()
     : {

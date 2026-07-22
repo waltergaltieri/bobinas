@@ -1,7 +1,8 @@
 export function parseDarefImportArgs(args: string[]) {
   const help =
     args.includes("--help") || args.includes("-h") || args.includes("help");
-  if (help) return { apply: false, help: true };
+  const transport = args.includes("supabase") ? "supabase" : "database";
+  if (help) return { apply: false, help: true, transport } as const;
 
   const apply = args.includes("--apply") || args[0] === "apply";
   if (apply) {
@@ -20,11 +21,13 @@ export function parseDarefImportArgs(args: string[]) {
     "DAREF-422",
     "apply",
     "help",
+    "database",
+    "supabase",
   ]);
   const unknown = args.filter((arg) => !supported.has(arg));
   if (unknown.length > 0) {
     throw new Error(`Argumentos desconocidos: ${unknown.join(", ")}`);
   }
 
-  return { apply, help: false };
+  return { apply, help: false, transport } as const;
 }

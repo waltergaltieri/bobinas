@@ -132,7 +132,7 @@ export async function runDarefImport({
       report.errors.push({
         code: product.internalCode,
         stage: "image",
-        message: error instanceof Error ? error.message : String(error),
+        message: getErrorMessage(error),
       });
     }
   });
@@ -140,6 +140,19 @@ export async function runDarefImport({
   await persistence.apply({ plan, products: targetProducts, images });
 
   return { report, backup };
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return String(error);
 }
 
 async function mapWithConcurrency<T>(

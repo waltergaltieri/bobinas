@@ -218,6 +218,46 @@ Validaciones recomendadas en staging:
 - Confirmar rechazo de formatos no permitidos.
 - Confirmar rechazo de archivos mayores a 5 MB.
 
+## Importacion inicial DAREF
+
+El snapshot versionado en
+`data/imports/daref/catalogo-daref-maestro.json` contiene 422 productos de las
+categorias Inducidos, Rotores y Estatores. La importacion crea tambien sus
+caracteristicas y opciones normalizadas.
+
+Simulacion de solo lectura con la conexion PostgreSQL:
+
+```bash
+npm run catalog:import:daref
+```
+
+Carga real, con confirmacion explicita:
+
+```bash
+npm run catalog:import:daref -- apply DAREF-422
+```
+
+Si la clave de servicio de Supabase esta vigente pero `DATABASE_URL` no lo
+esta, se puede usar el transporte administrativo de la Data API:
+
+```bash
+npm run catalog:import:daref -- apply DAREF-422 supabase
+```
+
+Ambos transportes son idempotentes y protegen los productos que ya fueron
+revisados. Todo producto importado queda:
+
+- inactivo;
+- con precio 0 y stock por pedido;
+- en estado de revision `PENDING`;
+- vinculado al lote y URL de origen;
+- impedido de activarse hasta estar `APPROVED`, tener precio positivo y al
+  menos una imagen.
+
+Los reportes y respaldos se escriben en `backups/catalog-imports/` y no se
+versionan. Un fallo individual de imagen no publica el producto ni interrumpe
+la carga de sus datos; queda registrado en el reporte para su revision.
+
 ## Vercel staging
 
 Antes de crear un preview/staging en Vercel:
@@ -299,6 +339,7 @@ npm run db:push
 npm run db:seed
 npm run db:verify
 npm run admin:create
+npm run catalog:import:daref
 ```
 
 ## Reglas criticas
