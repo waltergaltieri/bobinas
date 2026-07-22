@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Barcode, MessageCircle, PackagePlus } from "lucide-react";
+import { Barcode, Clock, MessageCircle, PackagePlus } from "lucide-react";
 
 import { addToRequestAction } from "@/app/actions/purchase-requests";
 import type { CatalogProductCard } from "@/lib/data/product-presenter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { PRODUCT_AVAILABILITY_LABEL } from "@/lib/catalog/availability";
 
 export function ProductCard({ product }: { product: CatalogProductCard }) {
   const isPrivate = product.primaryAction === "add_to_request";
@@ -80,7 +81,10 @@ export function ProductCard({ product }: { product: CatalogProductCard }) {
           {isPrivate ? (
             <>
               <p className="font-mono text-xl font-semibold">${product.price}</p>
-              <p className="text-xs text-muted-foreground">Stock: {product.stockMode}</p>
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="size-3.5" aria-hidden="true" />
+                {PRODUCT_AVAILABILITY_LABEL}
+              </p>
             </>
           ) : null}
         </CardContent>

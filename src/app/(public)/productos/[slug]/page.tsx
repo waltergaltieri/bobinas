@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MessageCircle, PackagePlus } from "lucide-react";
+import { Clock, MessageCircle, PackagePlus } from "lucide-react";
 
 import { addToRequestAction } from "@/app/actions/purchase-requests";
 import { ProductCard } from "@/components/catalog/product-card";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { PRODUCT_AVAILABILITY_LABEL } from "@/lib/catalog/availability";
 import { getProductDetail } from "@/lib/data/catalog";
 import { toCatalogProductCard } from "@/lib/data/product-presenter";
 
@@ -101,8 +102,9 @@ export default async function ProductDetailPage({
               <p className="mt-1 font-mono text-3xl font-semibold">
                 ${product.price}
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Stock: {product.stockMode}
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Clock className="size-4" aria-hidden="true" />
+                {PRODUCT_AVAILABILITY_LABEL}
               </p>
               <form action={addToRequestAction} className="mt-4">
                 <input type="hidden" name="productId" value={product.id} />
